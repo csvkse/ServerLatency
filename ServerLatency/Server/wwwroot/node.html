@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Node Client</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
+    <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#0a0a0f', surf: '#12121e', edge: '#1a1a2e',
+                            cyan: '#00f0ff', pink: '#ff00aa', purple: '#a855f7',
+                            yellow: '#ffcc00', green: '#00ff88', red: '#ff3355',
+                            text: '#e8e8f0', muted: '#8888aa', dim: '#555577'
+                        }
+                    },
+                    fontFamily: {
+                        display: ['Orbitron', 'sans-serif'],
+                        body: ['Inter', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Monaco', 'monospace'],
+                    },
+                    boxShadow: {
+                        'neon': '0 0 8px rgba(0,240,255,.3)',
+                        'neon-md': '0 0 16px rgba(0,240,255,.4)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Vue 3 & SignalR -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+
+    <style>
+        /* ========== Base ========== */
+        * { scrollbar-width: thin; scrollbar-color: #1a1a2e #0a0a0f; }
+        body { font-family: Inter, -apple-system, sans-serif; }
+
+        /* ========== Scrollbar (WebKit) ========== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0f; }
+        ::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2a2a4e; }
+
+        /* ========== Neon Border ========== */
+        .neon-border {
+            border: 1px solid #1e1e3a;
+            transition: border-color .3s, box-shadow .3s;
+        }
+        .neon-border:hover,
+        .neon-border:focus-within {
+            border-color: rgba(0,240,255,.4);
+            box-shadow: 0 0 8px rgba(0,240,255,.12);
+        }
+
+        /* ========== Form ========== */
+        .cyber-input {
+            background: #1a1a2e;
+            border: 1px solid #1e1e3a;
+            color: #e8e8f0;
+            transition: border-color .3s, box-shadow .3s;
+        }
+        .cyber-input:focus {
+            outline: none;
+            border-color: #00f0ff;
+            box-shadow: 0 0 8px rgba(0,240,255,.25);
+        }
+        .cyber-input::placeholder { color: #555577; }
+        .cyber-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ========== Button ========== */
+        .btn-neon-primary {
+            background: rgba(0,240,255,.15);
+            border: 1px solid #00f0ff;
+            color: #00f0ff;
+            transition: all .2s;
+        }
+        .btn-neon-primary:hover {
+            background: rgba(0,240,255,.25);
+            box-shadow: 0 0 16px rgba(0,240,255,.35);
+        }
+        
+        .btn-neon-red {
+            background: rgba(255,51,85,.15);
+            border: 1px solid #ff3355;
+            color: #ff3355;
+            transition: all .2s;
+        }
+        .btn-neon-red:hover {
+            background: rgba(255,51,85,.25);
+            box-shadow: 0 0 16px rgba(255,51,85,.35);
+        }
+
+        /* ========== Code / Logs ========== */
+        .code-block {
+            background: #0d0d16;
+            border: 1px solid #1a1a2e;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', Monaco, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* ========== Status Dot ========== */
+        .status-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+        }
+        .status-dot.online {
+            background: #00ff88;
+            animation: pulse 2s infinite;
+        }
+        .status-dot.offline {
+            background: #555577;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+        /* ========== Grid Background ========== */
+        .bg-grid {
+            background-image:
+                linear-gradient(rgba(0,240,255,.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,240,255,.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-cyber-bg text-cyber-text bg-grid flex items-center justify-center p-4">
+    <div id="app" class="w-full max-w-lg">
+        
+        <section class="neon-border rounded-xl bg-cyber-surf overflow-hidden shadow-neon-md">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-[#1e1e3a] flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="status-dot" :class="{ online: isConnected, offline: !isConnected }"></span>
+                    <h2 class="font-display text-lg tracking-[.1em] text-cyber-cyan m-0">EDGE<span class="text-cyber-text">_NODE</span></h2>
+                </div>
+                <div class="flex items-center gap-3">
+                    <select onchange="if(this.value) window.location.href = this.value" class="bg-cyber-bg text-cyber-cyan border border-[#1e1e3a] hover:border-cyber-cyan rounded px-2 py-1 outline-none transition-colors cursor-pointer text-[10px] font-mono">
+                        <option value="" disabled selected>[ PAGE_JUMP ]</option>
+                        <option value="/index.html">LATENCY_MATRIX</option>
+                        <option value="/node.html">EDGE_NODE</option>
+                        <option value="/data.html">RAW_DATA</option>
+                        <option value="/admin.html">ADMIN_PANEL</option>
+                    </select>
+                    <span class="text-xs text-cyber-muted font-mono" v-if="isConnected">ONLINE</span>
+                    <span class="text-xs text-cyber-dim font-mono" v-else>OFFLINE</span>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <!-- Form -->
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ NODE_NAME</label>
+                        <input v-model="nodeName" :disabled="isConnected" class="cyber-input w-full rounded-lg px-3 py-2 text-sm font-mono">
+                    </div>
+                    <div>
+                        <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ REPORT_IP <span class="text-cyber-dim">(Optional)</span></label>
+                        <input v-model="nodeIp" :disabled="isConnected" placeholder="Auto-detected" class="cyber-input w-full rounded-lg px-3 py-2 text-sm font-mono">
+                    </div>
+                    <div>
+                        <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ ACCESS_KEY</label>
+                        <input v-model="accessKey" type="password" :disabled="isConnected" placeholder="Enter Secret Key" class="cyber-input w-full rounded-lg px-3 py-2 text-sm font-mono">
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button class="w-full py-2.5 rounded-lg text-sm font-display tracking-widest font-bold mb-6"
+                    :class="isConnected ? 'btn-neon-red' : 'btn-neon-primary'"
+                    @click="toggle">
+                    {{ isConnected ? 'DISCONNECT' : 'START_NODE' }}
+                </button>
+
+                <!-- Console Logs -->
+                <div>
+                    <label class="text-xs font-mono text-cyber-muted block mb-1.5">// SYSTEM_LOGS</label>
+                    <div class="code-block h-48 overflow-y-auto p-3 text-cyber-green/80 flex flex-col" ref="logBox">
+                        <div v-if="logs.length === 0" class="text-cyber-dim text-xs mt-auto">// Awaiting connection...</div>
+                        <div v-for="(l,i) in logs" :key="i" class="text-xs">
+                            <span class="text-cyber-dim">[{{l.time}}]</span> {{l.msg}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        const { createApp, ref, nextTick } = Vue;
+        createApp({
+            setup() {
+                const isConnected = ref(false);
+                const nodeName = ref('WebNode-' + Math.floor(Math.random() * 99));
+                const nodeIp = ref('');
+                const accessKey = ref('');
+                const logs = ref([]);
+                const logBox = ref(null);
+
+                let connection = null;
+                let targets = [];
+                let timer = null;
+
+                const addLog = (msg) => {
+                    logs.value.unshift({ time: new Date().toLocaleTimeString(), msg });
+                    if (logs.value.length > 50) logs.value.pop();
+                };
+
+                const toggle = async () => {
+                    if (isConnected.value) await stop();
+                    else await start();
+                };
+
+                const start = async () => {
+                    try {
+                        addLog("Connecting to Control Plane via SignalR...");
+                        connection = new signalR.HubConnectionBuilder()
+                            .withUrl("/latencyHub")
+                            .withAutomaticReconnect()
+                            .build();
+
+                        connection.on("Welcome", msg => {
+                            const match = msg.match(/\((.*?)\)/);
+                            if (match && match[1]) nodeIp.value = match[1];
+                            addLog(msg);
+                        });
+
+                        connection.on("UpdateTargets", newTargets => {
+                            targets = newTargets || [];
+                            addLog(`Updated targets: ${targets.length}`);
+                            runPing();
+                        });
+
+                        connection.onclose(() => {
+                            isConnected.value = false;
+                            addLog("Connection closed.");
+                        });
+
+                        await connection.start();
+                        await connection.invoke("JoinPingNode", nodeName.value, accessKey.value, nodeIp.value);
+                        
+                        isConnected.value = true;
+                        runPing();
+                        timer = setInterval(runPing, 5000); // Ping every 5s
+
+                    } catch (e) {
+                        addLog(`Connection failed: ${e.message}`);
+                        isConnected.value = false;
+                    }
+                };
+
+                const stop = async () => {
+                    if (timer) clearInterval(timer);
+                    if (connection) {
+                        await connection.stop();
+                        connection = null;
+                    }
+                    isConnected.value = false;
+                    addLog("Stopped.");
+                };
+
+                const runPing = async () => {
+                    if (!isConnected.value || targets.length === 0) return;
+
+                    const reports = [];
+                    for (const t of targets) {
+                        if (t === nodeIp.value) continue;
+
+                        const start = performance.now();
+                        let lat = -1;
+                        try {
+                            // HTTP Ping Simulation
+                            await fetch(`//${t}`, { method: 'HEAD', mode: 'no-cors', cache: 'no-cache' });
+                            lat = performance.now() - start;
+                        } catch (e) { lat = -1; }
+
+                        reports.push({
+                            sourceName: nodeName.value,
+                            sourceIp: nodeIp.value,
+                            targetIp: t,
+                            latencyMs: lat,
+                            isSuccess: lat >= 0
+                        });
+                    }
+
+                    if (reports.length > 0 && connection && connection.state === signalR.HubConnectionState.Connected) {
+                        try {
+                            await connection.invoke("Report", reports, accessKey.value);
+                            addLog(`Sent ${reports.length} ping reports.`);
+                        } catch (e) { addLog(`Report failed: ${e.message}`); }
+                    }
+                };
+
+                return { isConnected, nodeName, nodeIp, accessKey, logs, toggle, logBox };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Dump - Server Latency</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
+    <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#0a0a0f', surf: '#12121e', edge: '#1a1a2e',
+                            cyan: '#00f0ff', pink: '#ff00aa', purple: '#a855f7',
+                            yellow: '#ffcc00', green: '#00ff88', red: '#ff3355',
+                            text: '#e8e8f0', muted: '#8888aa', dim: '#555577'
+                        }
+                    },
+                    fontFamily: {
+                        display: ['Orbitron', 'sans-serif'],
+                        body: ['Inter', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Monaco', 'monospace'],
+                    },
+                    boxShadow: {
+                        'neon': '0 0 8px rgba(0,240,255,.3)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * { scrollbar-width: thin; scrollbar-color: #1a1a2e #0a0a0f; }
+        body { font-family: Inter, -apple-system, sans-serif; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0f; }
+        ::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2a2a4e; }
+
+        .neon-border {
+            border: 1px solid #1e1e3a;
+            transition: border-color .3s, box-shadow .3s;
+        }
+
+        .code-block {
+            background: #0d0d16;
+            border: 1px solid #1a1a2e;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', Monaco, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .bg-grid {
+            background-image:
+                linear-gradient(rgba(0,240,255,.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,240,255,.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-cyber-bg text-cyber-text bg-grid p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="neon-border rounded-xl bg-cyber-surf overflow-hidden shadow-neon">
+            <div class="px-4 py-3 border-b border-[#1e1e3a] flex items-center justify-between">
+                <span class="font-display tracking-[.1em] text-sm text-cyber-cyan">RAW_DATA<span class="text-cyber-text">_DUMP</span></span>
+                <div class="flex items-center gap-3">
+                    <select onchange="if(this.value) window.location.href = this.value" class="bg-cyber-bg text-cyber-cyan border border-[#1e1e3a] hover:border-cyber-cyan rounded px-2 py-1 outline-none transition-colors cursor-pointer text-[10px] font-mono">
+                        <option value="" disabled selected>[ PAGE_JUMP ]</option>
+                        <option value="/index.html">LATENCY_MATRIX</option>
+                        <option value="/node.html">EDGE_NODE</option>
+                        <option value="/data.html">RAW_DATA</option>
+                        <option value="/admin.html">ADMIN_PANEL</option>
+                    </select>
+                    <span class="text-[10px] text-cyber-muted font-mono">// MATRIX_API</span>
+                </div>
+            </div>
+            
+            <div class="p-4" id="content-container">
+                <div id="loading" class="text-cyber-dim font-mono text-xs animate-pulse">// Loading data stream...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const key = params.get('key') || '';
+        fetch(`/api/ServerLatency/Matrix?key=${encodeURIComponent(key)}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                const container = document.getElementById('content-container');
+                const pre = document.createElement('pre');
+                pre.className = 'code-block p-4 text-cyber-green/90 overflow-x-auto max-h-[70vh]';
+                pre.textContent = JSON.stringify(data, null, 2);
+                container.appendChild(pre);
+            })
+            .catch(error => {
+                document.getElementById('loading').innerHTML = '<span class="text-cyber-red">Error: ' + error + '</span>';
+                console.error('Error:', error);
+            });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Latency Monitor</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
+    <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#0a0a0f', surf: '#12121e', edge: '#1a1a2e',
+                            cyan: '#00f0ff', pink: '#ff00aa', purple: '#a855f7',
+                            yellow: '#ffcc00', green: '#00ff88', red: '#ff3355',
+                            text: '#e8e8f0', muted: '#8888aa', dim: '#555577'
+                        }
+                    },
+                    fontFamily: {
+                        display: ['Orbitron', 'sans-serif'],
+                        body: ['Inter', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Monaco', 'monospace'],
+                    },
+                    boxShadow: {
+                        'neon': '0 0 8px rgba(0,240,255,.3)',
+                        'neon-md': '0 0 16px rgba(0,240,255,.4)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Vue 3 & SignalR -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+
+    <style>
+        /* ========== Base ========== */
+        * { scrollbar-width: thin; scrollbar-color: #1a1a2e #0a0a0f; }
+        body { font-family: Inter, -apple-system, sans-serif; }
+
+        /* ========== Scrollbar (WebKit) ========== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0f; }
+        ::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2a2a4e; }
+
+        /* ========== Neon Border ========== */
+        .neon-border {
+            border: 1px solid #1e1e3a;
+            transition: border-color .3s, box-shadow .3s;
+        }
+        .neon-border:hover,
+        .neon-border:focus-within {
+            border-color: rgba(0,240,255,.4);
+            box-shadow: 0 0 8px rgba(0,240,255,.12);
+        }
+
+        /* ========== Tab ========== */
+        .cyber-tab {
+            color: #8888aa;
+            border-bottom: 2px solid transparent;
+            transition: all .2s;
+            cursor: pointer;
+        }
+        .cyber-tab:hover { color: #e8e8f0; }
+        .cyber-tab.active {
+            color: #00f0ff;
+            border-bottom-color: #00f0ff;
+        }
+
+        /* ========== Table ========== */
+        .cyber-table th {
+            background: #12121e;
+            color: #8888aa;
+            font-weight: 500;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            padding: 10px 12px;
+            border-bottom: 1px solid #1e1e3a;
+            text-align: center;
+        }
+        .cyber-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #16162a;
+            font-size: 13px;
+            text-align: center;
+            font-family: 'JetBrains Mono', Monaco, monospace;
+        }
+        .cyber-table tr:hover td { background: rgba(0,240,255,.03); }
+
+        .cyber-table .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background: #12121e;
+            box-shadow: 2px 0 0 #1e1e3a;
+            text-align: left;
+        }
+
+        /* ========== Grid Background ========== */
+        .bg-grid {
+            background-image:
+                linear-gradient(rgba(0,240,255,.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,240,255,.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* ========== Custom App Styles ========== */
+        .lat-cell {
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.3s;
+            display: inline-block;
+            min-width: 48px;
+            font-size: 0.85rem;
+            position: relative;
+            cursor: pointer;
+        }
+        .lat-good { color: #00ff88; background: rgba(0, 255, 136, 0.1); }
+        .lat-warn { color: #ffcc00; background: rgba(255, 204, 0, 0.1); }
+        .lat-bad { color: #ff3355; background: rgba(255, 51, 85, 0.1); }
+        .lat-null { color: #555577; opacity: 0.5; }
+        .self-cell { color: #555577; opacity: 0.3; }
+        .lat-warn-anim { animation: lv-pulse-warn 2s infinite; color: #fff; background: rgba(255, 204, 0, 0.4); }
+        .lat-bad-heavy { background: rgba(255, 51, 85, 0.6) !important; color: #fff; font-weight: bold; }
+        .cell-highlight { border: 2px solid #00f0ff; z-index: 10; transform: scale(1.05); }
+        @keyframes lv-pulse-warn {
+            0% { opacity: .8; }
+            50% { opacity: 1; box-shadow: 0 0 10px rgba(255,204,0,.3); }
+            100% { opacity: .8; }
+        }
+
+        /* 节点标签 */
+        .tag { padding: 2px 8px; border-radius: 4px; font-size: .75rem; margin-right: 4px; font-weight: 600; }
+        .tag-gold { background: none; border: 1px solid #ffcc00; color: #ffcc00; box-shadow: 0 0 5px rgba(255,204,0,.2); }
+        .tag-unstable { background: rgba(255,51,85,.2); color: #ff3355; }
+        .tag-hole { background: #000; color: #fff; border: 1px solid #333; }
+
+        /* 排行榜行 */
+        .score-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+        }
+        .score-row:last-child { border-bottom: none; }
+        .score-val { font-family: 'JetBrains Mono', monospace; font-weight: bold; }
+
+        /* 钻取弹窗 */
+        .lv-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,.5);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100; backdrop-filter: blur(4px);
+        }
+        .lv-modal-content {
+            background: #12121e; border: 1px solid #1a1a2e; padding: 24px;
+            border-radius: 12px; max-width: 600px; width: 90%; color: #e8e8f0;
+        }
+        @media (max-width: 768px) {
+            .lv-modal-content { padding: 16px; width: 85%; }
+        }
+
+        .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    </style>
+</head>
+
+<body class="min-h-screen bg-cyber-bg text-cyber-text bg-grid">
+    <div id="app">
+        <!-- ==================== HEADER ==================== -->
+        <header class="border-b border-[#1e1e3a] bg-cyber-surf/80 backdrop-blur sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap md:flex-nowrap md:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <h1 class="font-display text-lg tracking-[.15em] text-cyber-cyan">LATENCY<span class="text-cyber-text">_MATRIX</span></h1>
+                    <span class="text-xs text-cyber-muted hidden sm:inline">// 全网节点延迟监控</span>
+                </div>
+                <div class="flex items-center gap-4 text-xs font-mono text-cyber-muted">
+                    <button @click="showAuthModal = true" class="px-2 py-1 border rounded transition-colors" :class="isAuth ? 'border-cyber-green text-cyber-green hover:bg-cyber-green/10' : 'border-cyber-dim text-cyber-dim hover:bg-cyber-dim/10'">
+                        <span v-if="isAuth">🔑 AUTH_OK</span>
+                        <span v-else>🔒 ADD_AUTH</span>
+                    </button>
+                    <select onchange="if(this.value) window.location.href = this.value" class="bg-cyber-bg text-cyber-cyan border border-[#1e1e3a] hover:border-cyber-cyan rounded px-2 py-1 outline-none transition-colors cursor-pointer text-[10px] font-mono">
+                        <option value="" disabled selected>[ PAGE_JUMP ]</option>
+                        <option value="/index.html">LATENCY_MATRIX</option>
+                        <option value="/node.html">EDGE_NODE</option>
+                        <option value="/data.html">RAW_DATA</option>
+                        <option value="/admin.html">ADMIN_PANEL</option>
+                    </select>
+                    <div class="flex items-center gap-2">
+                        <span>NODE_SYNC:</span>
+                        <span class="text-cyber-cyan">{{ serverTime }}</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ==================== MAIN ==================== -->
+        <main class="max-w-7xl mx-auto px-4 py-6">
+
+            <!-- Performance Leaderboard -->
+            <div v-if="uniqueNodes.length > 0" class="grid gap-6 mb-6 grid-cols-1 lg:grid-cols-2">
+                <section class="neon-border rounded-xl bg-cyber-surf/60 p-5">
+                    <div class="flex justify-between mb-2">
+                        <h4 class="m-0 text-cyber-green">🏆 Top Performers</h4>
+                        <span class="text-sm text-cyber-dim">Health Score</span>
+                    </div>
+                    <div v-for="(node, idx) in topNodes" :key="node.name" class="score-row">
+                        <div class="flex items-center">
+                            <span class="w-5 text-cyber-muted">{{ idx + 1 }}</span>
+                            <span class="font-medium">{{ node.name }}</span>
+                            <span v-for="tag in node.tags" :key="tag" class="tag" :class="getTagClass(tag)"
+                                style="margin-left:8px; transform:scale(0.8)">{{ tag }}</span>
+                        </div>
+                        <div class="score-val text-cyber-green">{{ node.healthScore }}</div>
+                    </div>
+                </section>
+
+                <section class="neon-border rounded-xl bg-cyber-surf/60 p-5">
+                    <div class="flex justify-between mb-2">
+                        <h4 class="m-0 text-cyber-red">⚠️ Critical Alerts</h4>
+                        <span class="text-sm text-cyber-dim">Lowest Health</span>
+                    </div>
+                    <div v-for="node in criticalNodes" :key="node.name" class="score-row">
+                        <div class="flex items-center">
+                            <span class="font-medium text-cyber-muted">{{ node.name }}</span>
+                        </div>
+                        <div class="score-val text-cyber-red">{{ node.healthScore }}</div>
+                    </div>
+                    <div v-if="criticalNodes.length === 0" class="py-3 text-center text-cyber-dim text-sm">
+                        All systems nominal
+                    </div>
+                </section>
+            </div>
+            
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex gap-4 items-end">
+                    <div class="font-mono text-sm text-cyber-cyan">▶ MONITORING METRICS</div>
+                    <div class="flex gap-3 text-xs">
+                        <button class="cyber-tab px-2 py-1" :class="{active: viewMode === 'latency'}"
+                            @click="viewMode = 'latency'">LATENCY (ms)</button>
+                        <button class="cyber-tab px-2 py-1" :class="{active: viewMode === 'loss1m'}"
+                            @click="viewMode = 'loss1m'">LOSS 1m</button>
+                        <button class="cyber-tab px-2 py-1" :class="{active: viewMode === 'loss10m'}"
+                            @click="viewMode = 'loss10m'">LOSS 10m</button>
+                        <button class="cyber-tab px-2 py-1" :class="{active: viewMode === 'loss30m'}"
+                            @click="viewMode = 'loss30m'">LOSS 30m</button>
+                    </div>
+                </div>
+                <div class="text-xs font-mono text-cyber-muted">
+                    ACTIVE NODES: <span class="text-cyber-cyan">{{ uniqueNodes.length }}</span>
+                </div>
+            </div>
+
+            <!-- Matrix Table -->
+            <section class="neon-border rounded-xl bg-cyber-surf overflow-hidden">
+                <div class="p-0 table-scroll">
+                    <table v-if="uniqueNodes.length > 0" class="cyber-table w-full">
+                        <thead>
+                            <tr>
+                                <th class="sticky-col !w-32 z-10">
+                                    <span class="text-cyber-cyan">SOURCE</span> \ TARGET
+                                </th>
+                                <th v-for="node in uniqueNodes" :key="node.ip">
+                                    <div class="text-cyber-text/90 font-medium cursor-pointer border-b border-dashed border-[#64748b] inline-block" @click="showNodeDetails(node)">
+                                        <span v-if="node.tags && node.tags.includes('Golden Node')" class="text-cyber-yellow mr-1">★</span>
+                                        {{ node.name }}
+                                    </div>
+                                    <div class="text-[10px] text-cyber-dim font-mono mt-0.5 cursor-pointer" @click="showNodeDetails(node)">{{ node.healthScore || node.ip }}</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="source in uniqueNodes" :key="source.ip">
+                                <td class="sticky-col font-medium text-cyber-text/90">
+                                    <div class="flex items-center cursor-pointer" @click="showNodeDetails(source)">
+                                        <span v-if="source.tags && source.tags.includes('Golden Node')" class="text-cyber-yellow mr-1">★</span>
+                                        {{ source.name }}
+                                    </div>
+                                </td>
+                                <td v-for="target in uniqueNodes" :key="target.ip">
+                                    <template v-if="source.ip === target.ip">
+                                        <div class="self-cell">●</div>
+                                    </template>
+                                    <template v-else>
+                                        <!-- Latency View -->
+                                        <div v-if="viewMode === 'latency'" class="lat-cell"
+                                            :class="getLatencyClass(source.ip, target.ip)"
+                                            :style="getHeatmapStyle(source.ip, target.ip)"
+                                            @click="highlightSymmetric(source.ip, target.ip)">
+                                            {{ getLatencyValue(source.ip, target.ip) }}
+                                        </div>
+                                        <!-- Loss Views -->
+                                        <div v-else class="lat-cell" 
+                                            :class="getLossClass(source.ip, target.ip, viewMode)"
+                                            @click="highlightSymmetric(source.ip, target.ip)">
+                                            {{ getLossValue(source.ip, target.ip, viewMode) }}%
+                                        </div>
+                                    </template>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div v-else class="py-16 text-center text-cyber-dim font-mono text-sm">
+                        Waiting for active nodes synchronization...
+                    </div>
+                </div>
+            </section>
+
+            <!-- Drilldown Modal -->
+            <div v-if="selectedNode" class="lv-modal" @click.self="selectedNode = null">
+                <div class="lv-modal-content">
+                    <div class="flex justify-between mb-6 items-center">
+                        <h2 class="m-0 font-display text-cyber-cyan">{{ selectedNode.name }}</h2>
+                        <button class="cyber-tab px-2 py-1" @click="selectedNode = null">Close</button>
+                    </div>
+                    <div class="flex gap-3 mb-4">
+                        <div class="tag" :class="getTagClass(tag)" v-for="tag in selectedNode.tags" :key="tag">{{ tag }}</div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 mb-4 text-center">
+                        <div class="bg-black/20 p-3 rounded-lg">
+                            <div class="text-sm text-cyber-muted">Health Score</div>
+                            <div class="text-2xl font-bold"
+                                :style="{color: selectedNode.healthScore > 80 ? '#00ff88' : '#ff3355'}">{{ selectedNode.healthScore }}</div>
+                        </div>
+                        <div class="bg-black/20 p-3 rounded-lg">
+                            <div class="text-sm text-cyber-muted">Inbound Score</div>
+                            <div class="text-xl font-bold">{{ selectedNode.inboundScore || '-' }}</div>
+                        </div>
+                        <div class="bg-black/20 p-3 rounded-lg">
+                            <div class="text-sm text-cyber-muted">Outbound Score</div>
+                            <div class="text-xl font-bold">{{ selectedNode.outboundScore || '-' }}</div>
+                        </div>
+                    </div>
+                    <!-- Aggregated Trend Chart -->
+                    <div class="bg-black/20 p-4 rounded-lg mb-4">
+                        <div class="text-sm text-cyber-muted mb-2">Avg Outbound Latency (5m)</div>
+                        <svg viewBox="0 0 300 100" style="width:100%; height:100px; overflow:visible">
+                            <line x1="0" y1="0" x2="300" y2="0" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4" />
+                            <line x1="0" y1="50" x2="300" y2="50" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4" />
+                            <line x1="0" y1="100" x2="300" y2="100" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4" />
+                            <text x="2" y="10" fill="rgba(255,255,255,0.5)" font-size="10" text-anchor="start">200ms</text>
+                            <text x="2" y="60" fill="rgba(255,255,255,0.5)" font-size="10" text-anchor="start">100ms</text>
+                            <text x="2" y="95" fill="rgba(255,255,255,0.5)" font-size="10" text-anchor="start">0ms</text>
+                            <polyline :points="getAggregatedHistoryPoints(selectedNode)" fill="none" stroke="#00f0ff"
+                                stroke-width="2" vector-effect="non-scaling-stroke" />
+                        </svg>
+                    </div>
+                    <div class="text-sm text-cyber-muted">IP: {{ selectedNode.ip }}</div>
+                </div>
+            </div>
+
+            <!-- Auth Modal -->
+            <div v-if="showAuthModal" class="lv-modal" @click.self="showAuthModal = false">
+                <div class="lv-modal-content max-w-sm text-center border-[#1e1e3a] shadow-neon-md p-8">
+                    <h2 class="font-display text-cyber-cyan mb-6 tracking-widest text-lg">AUTHENTICATION</h2>
+                    <input v-model="accessKey" type="password" placeholder="Enter Access Key" class="cyber-input w-full rounded-lg p-3 text-center mb-4 font-mono tracking-widest" @keyup.enter="saveAuth">
+                    <button @click="saveAuth" class="btn-neon-primary w-full py-2.5 rounded-lg font-display tracking-widest font-bold mb-3">SAVE & CONNECT</button>
+                    <button @click="clearAuth" class="text-cyber-red border border-cyber-red/30 w-full py-2.5 rounded-lg font-display tracking-widest font-bold hover:bg-cyber-red/10 transition-colors">CLEAR AUTH</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const matrixData = ref([]);
+                const onlineNodes = ref([]);
+                const serverTime = ref('-');
+                const serverTimeRaw = ref(null);
+                const viewMode = ref('latency'); // 'latency', 'loss1m', 'loss10m', 'loss30m'
+                const activeHighlight = ref(null);
+                const selectedNode = ref(null);
+                
+                const isAuth = ref(false);
+                const showAuthModal = ref(false);
+                const accessKey = ref(localStorage.getItem('SL_KEY') || '');
+
+                const saveAuth = () => {
+                    localStorage.setItem('SL_KEY', accessKey.value);
+                    window.location.reload();
+                };
+
+                const clearAuth = () => {
+                    localStorage.removeItem('SL_KEY');
+                    accessKey.value = '';
+                    window.location.reload();
+                };
+
+                const showNodeDetails = (node) => { selectedNode.value = node; };
+
+                const highlightSymmetric = (s, t) => {
+                    if (activeHighlight.value && activeHighlight.value.s === s && activeHighlight.value.t === t) {
+                        activeHighlight.value = null;
+                    } else {
+                        activeHighlight.value = { s, t };
+                    }
+                };
+
+                const uniqueNodes = computed(() => {
+                    const seenNames = new Set();
+                    const result = [];
+                    for (const n of onlineNodes.value) {
+                        if (!n || !n.name) continue;
+                        const nameKey = n.name.trim();
+                        if (seenNames.has(nameKey)) continue;
+                        seenNames.add(nameKey);
+                        result.push(n);
+                    }
+                    return result;
+                });
+
+                const topNodes = computed(() => uniqueNodes.value.slice(0, 3));
+                const criticalNodes = computed(() => uniqueNodes.value.filter(n => (n.healthScore || 0) < 60).slice(0, 3));
+
+                const getTagClass = (tag) => {
+                    if (tag === 'Golden Node') return 'tag-gold';
+                    if (tag === 'Unstable') return 'tag-unstable';
+                    if (tag === 'Black Hole') return 'tag-hole';
+                    return '';
+                };
+
+                const getCellData = (s, t) => {
+                    return matrixData.value.find(r => r.sourceIp === s && r.targetIp === t);
+                };
+
+                const getLatencyValue = (s, t) => {
+                    const rec = getCellData(s, t);
+                    if (!rec) return '-';
+                    return rec.isSuccess ? (rec.latencyMs === 0 ? '<1' : Math.round(rec.latencyMs)) : 'TIMEOUT';
+                };
+
+                const getLatencyClass = (s, t) => {
+                    const rec = getCellData(s, t);
+                    if (!rec) return 'lat-null';
+                    if (activeHighlight.value && activeHighlight.value.s === s && activeHighlight.value.t === t) return 'cell-highlight';
+                    if (activeHighlight.value && activeHighlight.value.s === t && activeHighlight.value.t === s) return 'cell-highlight'; // 对称高亮
+                    if (!rec.isSuccess) return 'lat-bad-heavy';
+                    const val = rec.latencyMs;
+                    if (val < 50) return 'lat-good';
+                    if (val < 150) return 'lat-warn';
+                    return 'lat-bad';
+                };
+
+                const getHeatmapStyle = (s, t) => {
+                    const rec = getCellData(s, t);
+                    if (!rec || !rec.isSuccess) return {};
+                    if (rec.lossRate1m > 0) {
+                        if (rec.lossRate1m > 0.05) return { backgroundColor: 'rgba(255, 51, 85, 0.6)' };
+                        return { backgroundColor: `rgba(255, 204, 0, ${0.2 + (rec.lossRate1m * 10)})`, animation: 'lv-pulse-warn 2s infinite' };
+                    }
+                    if (rec.latencyMs < 50) return { backgroundColor: 'rgba(0, 255, 136, 0.1)' };
+                    if (rec.latencyMs < 150) return { backgroundColor: 'rgba(255, 204, 0, 0.1)' };
+                    return { backgroundColor: 'rgba(255, 51, 85, 0.1)' };
+                };
+
+                const getLossValue = (s, t, mode) => {
+                    const rec = getCellData(s, t);
+                    if (!rec) return '-';
+                    let rate = 0;
+                    if (mode === 'loss1m') rate = rec.lossRate1m;
+                    else if (mode === 'loss10m') rate = rec.lossRate10m;
+                    else if (mode === 'loss30m') rate = rec.lossRate30m;
+                    return (rate * 100).toFixed(1);
+                };
+
+                const getLossClass = (s, t, mode) => {
+                    if (activeHighlight.value && ((activeHighlight.value.s === s && activeHighlight.value.t === t) || (activeHighlight.value.s === t && activeHighlight.value.t === s))) return 'cell-highlight';
+                    const rec = getCellData(s, t);
+                    if (!rec) return 'lat-null';
+                    let rate = 0;
+                    if (mode === 'loss1m') rate = rec.lossRate1m;
+                    else if (mode === 'loss10m') rate = rec.lossRate10m;
+                    else if (mode === 'loss30m') rate = rec.lossRate30m;
+                    
+                    if (rate > 0.05) return 'lat-bad-heavy';
+                    if (rate > 0) return 'lat-warn-anim';
+                    return 'lat-good';
+                };
+
+                const getAggregatedHistoryPoints = (node) => {
+                    if (!node) return '';
+                    const outbound = matrixData.value.filter(m => m.sourceIp === node.ip);
+                    if (outbound.length === 0) return '';
+
+                    const now = new Date(serverTimeRaw.value || Date.now()).getTime();
+                    const duration = 5 * 60 * 1000;
+                    const startTime = now - duration;
+
+                    const buckets = new Map(); // timestamp(5s 桶) -> {sum, count}
+                    outbound.forEach(link => {
+                        if (!link.history) return;
+                        link.history.forEach(pt => {
+                            const t = Math.floor(new Date(pt.timestamp).getTime() / 5000) * 5000;
+                            if (t < startTime) return;
+                            if (!buckets.has(t)) buckets.set(t, { sum: 0, count: 0 });
+                            const b = buckets.get(t);
+                            if (pt.isSuccess) { b.sum += pt.latencyMs; b.count++; }
+                            else { b.sum += 500; b.count++; } // 超时惩罚
+                        });
+                    });
+
+                    if (buckets.size === 0) return '';
+                    const sortedTs = Array.from(buckets.keys()).sort();
+                    const points = sortedTs.map(t => {
+                        const b = buckets.get(t);
+                        const avg = b.sum / b.count;
+                        let x = ((t - startTime) / duration) * 300;
+                        if (x < 0) x = 0; if (x > 300) x = 300;
+                        let y = 100 - (avg / 200) * 100;
+                        if (y < 0) y = 0; if (y > 100) y = 100;
+                        return `${x.toFixed(1)},${y.toFixed(1)}`;
+                    });
+                    return points.join(' ');
+                };
+
+                const handleMatrixData = (data) => {
+                    const matrixMap = new Map();
+                    (data.matrix || []).forEach(m => {
+                        matrixMap.set(`${m.sourceIp}|${m.targetIp}`, m);
+                    });
+                    matrixData.value = Array.from(matrixMap.values());
+
+                    const nodeMap = new Map();
+                    (data.onlineNodes || []).forEach(n => {
+                        if (!n || !n.name) return;
+                        const name = n.name.trim();
+                        if (!nodeMap.has(name)) nodeMap.set(name, n);
+                    });
+
+                    onlineNodes.value = Array.from(nodeMap.values()).map(n => {
+                        const outbound = matrixData.value.filter(m => m.sourceIp === n.ip && m.targetIp !== n.ip);
+                        const inbound = matrixData.value.filter(m => m.targetIp === n.ip && m.sourceIp !== n.ip);
+
+                        const calcScore = (links) => {
+                            if (links.length === 0) return 100;
+                            let totalLat = 0, totalLoss = 0, count = 0;
+                            links.forEach(l => {
+                                if (l.isSuccess) {
+                                    totalLat += l.latencyMs;
+                                    totalLoss += l.lossRate1m;
+                                    count++;
+                                } else {
+                                    totalLoss += 1;
+                                }
+                            });
+                            let avgLat = count > 0 ? totalLat / count : 500;
+                            let avgLoss = totalLoss / links.length;
+                            let score = 100 - (avgLat / 5) - (avgLoss * 200);
+                            if (score < 0) score = 0;
+                            if (score > 100) score = 100;
+                            return Math.round(score);
+                        };
+
+                        n.outboundScore = calcScore(outbound);
+                        n.inboundScore = calcScore(inbound);
+                        n.healthScore = Math.round((n.outboundScore + n.inboundScore) / 2);
+
+                        n.tags = [];
+                        if (n.healthScore >= 90) n.tags.push('Golden Node');
+                        if (n.healthScore < 60 && n.healthScore >= 20) n.tags.push('Unstable');
+                        if (n.healthScore < 20) n.tags.push('Black Hole');
+
+                        return n;
+                    }).sort((a, b) => (b.healthScore || 0) - (a.healthScore || 0));
+
+                    if (data.serverTime) {
+                        serverTimeRaw.value = data.serverTime;
+                        serverTime.value = new Date(data.serverTime).toLocaleTimeString();
+                    }
+                    if (data.isAuth !== undefined) {
+                        isAuth.value = data.isAuth;
+                    }
+                };
+
+                const startSignalR = async () => {
+                    const params = new URLSearchParams(window.location.search);
+                    const key = params.get('key') || accessKey.value;
+                    
+                    const connection = new signalR.HubConnectionBuilder()
+                        .withUrl("/latencyHub")
+                        .withAutomaticReconnect()
+                        .build();
+
+                    connection.on("ReceiveMatrixUpdate", (data) => {
+                        handleMatrixData(data);
+                    });
+
+                    try {
+                        await connection.start();
+                        console.log("SignalR Connected.");
+                        await connection.invoke("Join", key);
+                    } catch (err) {
+                        console.error("SignalR Connection Error: ", err);
+                    }
+                };
+
+                onMounted(() => {
+                    startSignalR();
+                });
+
+                return {
+                    uniqueNodes, getLatencyValue, getLatencyClass,
+                    getHeatmapStyle, highlightSymmetric,
+                    getLossValue, getLossClass,
+                    topNodes, criticalNodes, getTagClass,
+                    selectedNode, showNodeDetails, getAggregatedHistoryPoints,
+                    serverTime, viewMode,
+                    isAuth, showAuthModal, accessKey, saveAuth, clearAuth
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Server Latency</title>
+
+    <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
+    <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#0a0a0f', surf: '#12121e', edge: '#1a1a2e',
+                            cyan: '#00f0ff', pink: '#ff00aa', purple: '#a855f7',
+                            yellow: '#ffcc00', green: '#00ff88', red: '#ff3355',
+                            text: '#e8e8f0', muted: '#8888aa', dim: '#555577'
+                        }
+                    },
+                    fontFamily: {
+                        display: ['Orbitron', 'sans-serif'],
+                        body: ['Inter', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Monaco', 'monospace'],
+                    },
+                    boxShadow: {
+                        'neon': '0 0 8px rgba(0,240,255,.3)',
+                        'neon-md': '0 0 16px rgba(0,240,255,.4)',
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        * { scrollbar-width: thin; scrollbar-color: #1a1a2e #0a0a0f; }
+        body { font-family: Inter, -apple-system, sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0f; }
+        ::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 3px; }
+
+        .cyber-input {
+            background: #1a1a2e; border: 1px solid #1e1e3a; color: #e8e8f0;
+            transition: border-color .3s, box-shadow .3s;
+        }
+        .cyber-input:focus {
+            outline: none; border-color: #00f0ff; box-shadow: 0 0 8px rgba(0,240,255,.25);
+        }
+        
+        .btn-neon-primary {
+            background: rgba(0,240,255,.15); border: 1px solid #00f0ff; color: #00f0ff; transition: all .2s;
+        }
+        .btn-neon-primary:hover {
+            background: rgba(0,240,255,.25); box-shadow: 0 0 16px rgba(0,240,255,.35);
+        }
+
+        .bg-grid {
+            background-image: linear-gradient(rgba(0,240,255,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,240,255,.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .code-block {
+            background: #0d0d16; border: 1px solid #1a1a2e; border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 10px;
+            color: #00ff88; word-wrap: break-word; position: relative;
+        }
+        .copy-btn {
+            position: absolute; top: 6px; right: 6px; background: #1a1a2e;
+            border: 1px solid #1e1e3a; color: #8888aa; padding: 2px 6px;
+            border-radius: 4px; font-size: 10px; cursor: pointer; transition: .2s;
+        }
+        .copy-btn:hover { color: #00f0ff; border-color: #00f0ff; }
+    </style>
+</head>
+
+<body class="min-h-screen bg-cyber-bg text-cyber-text bg-grid">
+    <div id="app">
+        <!-- Header -->
+        <header class="border-b border-[#1e1e3a] bg-cyber-surf/80 backdrop-blur sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <h1 class="font-display text-lg tracking-[.15em] text-cyber-cyan">ADMIN<span class="text-cyber-text">_PANEL</span></h1>
+                </div>
+                <div class="flex items-center gap-4 text-xs font-mono text-cyber-muted">
+                    <select onchange="if(this.value) window.location.href = this.value" class="bg-cyber-bg text-cyber-cyan border border-[#1e1e3a] hover:border-cyber-cyan rounded px-2 py-1 outline-none cursor-pointer">
+                        <option value="" disabled>[ PAGE_JUMP ]</option>
+                        <option value="/index.html">LATENCY_MATRIX</option>
+                        <option value="/node.html">EDGE_NODE</option>
+                        <option value="/data.html">RAW_DATA</option>
+                        <option value="/admin.html" selected>ADMIN_PANEL</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- Auth Modal -->
+        <div v-if="!isAuthenticated" class="min-h-[80vh] flex items-center justify-center p-4">
+            <div class="bg-cyber-surf border border-[#1e1e3a] p-8 rounded-xl shadow-neon-md w-full max-w-sm text-center">
+                <h2 class="font-display text-cyber-cyan mb-6 tracking-widest">AUTHENTICATION</h2>
+                <div class="relative mb-4">
+                    <input v-model="accessKey" type="text" placeholder="Enter Access Key" class="cyber-input w-full rounded p-3 text-center font-mono tracking-widest pr-10" @keyup.enter="login">
+                    <button @click="randomizeLoginKey" class="absolute right-3 top-1/2 -translate-y-1/2 text-cyber-muted hover:text-cyber-cyan transition-colors" title="Random Generate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.94 4.09"/></svg>
+                    </button>
+                </div>
+                <button @click="login" class="btn-neon-primary w-full py-2.5 rounded font-display tracking-widest font-bold">LOGIN</button>
+                <div v-if="authError" class="text-cyber-red text-xs mt-3 font-mono">{{ authError }}</div>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div v-else class="max-w-4xl mx-auto px-4 py-8">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="font-display text-xl text-cyber-cyan">DASHBOARD</h2>
+                <button @click="logout" class="text-xs font-mono text-cyber-red border border-cyber-red/30 px-3 py-1 rounded hover:bg-cyber-red/10">LOGOUT</button>
+            </div>
+
+            <!-- Installation Guide Section -->
+            <div class="mb-10 bg-cyber-surf border border-[#1e1e3a] rounded-xl overflow-hidden shadow-neon-md">
+                <div class="px-6 py-4 border-b border-[#1e1e3a] bg-[#16162a]">
+                    <h3 class="font-display text-lg text-cyber-cyan tracking-wider">INSTALLATION_GUIDE</h3>
+                    <p class="text-xs text-cyber-muted font-mono mt-1">// Generate one-click install commands for new nodes or servers</p>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-mono text-cyber-muted block mb-1.5" title="Choose the operation mode for this node">$ MODE</label>
+                            <select v-model="installForm.mode" class="cyber-input w-full rounded p-2 text-sm font-mono">
+                                <option value="Client">Client (Edge Node)</option>
+                                <option value="Server">Server (Control Plane)</option>
+                            </select>
+                            <p class="text-[10px] text-cyber-dim mt-1">Edge Node reports latency; Control Plane aggregates it</p>
+                        </div>
+                        <div>
+                            <label class="text-xs font-mono text-cyber-muted block mb-1.5" title="The display name of the node in the latency matrix">$ NODE_NAME</label>
+                            <input v-model="installForm.nodeName" placeholder="e.g. Node-Tokyo-1" class="cyber-input w-full rounded p-2 text-sm font-mono">
+                            <p class="text-[10px] text-cyber-dim mt-1">Identifier for the node in the matrix</p>
+                        </div>
+                        <template v-if="installForm.mode === 'Client'">
+                            <div>
+                                <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ SERVER_URL</label>
+                                <input v-model="installForm.serverUrl" placeholder="http://1.2.3.4:15002" class="cyber-input w-full rounded p-2 text-sm font-mono">
+                                <p class="text-[10px] text-cyber-dim mt-1">Control Plane API address</p>
+                            </div>
+                            <div>
+                                <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ REPORT_IP <span class="text-cyber-dim">(Optional)</span></label>
+                                <input v-model="installForm.clientIp" placeholder="e.g. 192.168.1.100" class="cyber-input w-full rounded p-2 text-sm font-mono">
+                                <p class="text-[10px] text-cyber-dim mt-1">Override the IP address reported to peers</p>
+                            </div>
+                        </template>
+                        <template v-if="installForm.mode === 'Server'">
+                            <div>
+                                <label class="text-xs font-mono text-cyber-muted block mb-1.5" title="The local port the Control Plane API will bind to">$ BIND_PORT</label>
+                                <input v-model="installForm.port" type="number" placeholder="15002" class="cyber-input w-full rounded p-2 text-sm font-mono">
+                                <p class="text-[10px] text-cyber-dim mt-1">TCP port to listen for incoming Client requests</p>
+                            </div>
+                            <div>
+                                <label class="text-xs font-mono text-cyber-muted block mb-1.5" title="Optional: Custom API to fetch Server's public IP">$ PUBLIC_IP_API <span class="text-cyber-dim">(Optional)</span></label>
+                                <input v-model="installForm.publicIpApi" placeholder="e.g. https://api.ipify.org" class="cyber-input w-full rounded p-2 text-sm font-mono">
+                                <p class="text-[10px] text-cyber-dim mt-1">Custom API endpoint to fetch server's public IP</p>
+                            </div>
+                        </template>
+                        <div>
+                            <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ ACCESS_KEY</label>
+                            <div class="flex gap-2">
+                                <input v-model="installForm.accessKey" type="text" placeholder="Secret Key" class="cyber-input flex-1 rounded p-2 text-sm font-mono">
+                                <button @click="randomizeInstallKey" class="neon-border bg-[#1a1a2e] px-3 rounded text-cyber-cyan hover:bg-cyber-cyan/10 transition-colors" title="Random Generate">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.94 4.09"/></svg>
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-cyber-dim mt-1">Must match the Control Plane configuration</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="text-xs font-mono text-cyber-muted block mb-1.5">// GENERATED_COMMAND</label>
+                        <div class="code-block flex-1 h-full min-h-[150px] whitespace-pre-wrap flex flex-col justify-between">
+                            <button class="copy-btn" @click="copy(generatedCommand)">COPY</button>
+                            <span class="text-cyber-green">{{ generatedCommand }}</span>
+                            <div class="text-[10px] text-cyber-dim mt-4">* Assumes ServerLatency binary is in current directory. Run with root privileges.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h3 class="font-display text-lg text-cyber-cyan tracking-wider">NODE_MANAGEMENT</h3>
+            </div>
+
+            <div v-if="nodes.length === 0" class="text-center text-cyber-dim font-mono py-12 border border-dashed border-[#1e1e3a] rounded-xl">
+                // NO_ONLINE_NODES_FOUND
+            </div>
+
+            <div class="space-y-6">
+                <div v-for="node in nodes" :key="node.ip" class="bg-cyber-surf border border-[#1e1e3a] rounded-xl overflow-hidden hover:border-cyber-cyan/50 transition-colors">
+                    <div class="px-5 py-3 border-b border-[#1e1e3a] flex items-center justify-between bg-[#16162a]">
+                        <div class="flex items-center gap-3">
+                            <span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span>
+                            <span class="font-display tracking-wider text-cyber-text">{{ node.name }}</span>
+                            <span class="text-xs font-mono text-cyber-cyan bg-cyber-cyan/10 px-2 py-0.5 rounded">{{ node.ip }}</span>
+                        </div>
+                        <span class="text-xs text-cyber-dim font-mono">Last Seen: {{ formatTime(node.lastSeen) }}</span>
+                    </div>
+                    
+                    <div class="p-5 space-y-4">
+                        <!-- Status Command -->
+                        <div>
+                            <div class="text-xs text-cyber-muted font-mono mb-1">// CHECK_STATUS</div>
+                            <div class="code-block">
+                                <button class="copy-btn" @click="copy(cmdStatus)">COPY</button>
+                                {{ cmdStatus }}
+                            </div>
+                        </div>
+
+                        <!-- Update Config Command -->
+                        <div>
+                            <div class="text-xs text-cyber-muted font-mono mb-1">// UPDATE_CONFIG & RESTART</div>
+                            <div class="code-block text-cyber-yellow">
+                                <button class="copy-btn" @click="copy(cmdRestart)">COPY</button>
+                                {{ cmdRestart }}
+                            </div>
+                        </div>
+
+                        <!-- Uninstall Command -->
+                        <div>
+                            <div class="text-xs text-cyber-muted font-mono mb-1">// UNINSTALL_SERVICE</div>
+                            <div class="code-block text-cyber-red">
+                                <button class="copy-btn" @click="copy(cmdUninstall)">COPY</button>
+                                {{ cmdUninstall }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
+
+        createApp({
+            setup() {
+                const generateRandomKey = () => {
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                    let key = '';
+                    for (let i = 0; i < 16; i++) {
+                        key += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                    return key;
+                };
+
+                let initialKey = localStorage.getItem('SL_KEY');
+                if (!initialKey) {
+                    initialKey = generateRandomKey();
+                    localStorage.setItem('SL_KEY', initialKey);
+                }
+
+                const isAuthenticated = ref(false);
+                const accessKey = ref(initialKey);
+                const authError = ref('');
+                const nodes = ref([]);
+                let pollTimer = null;
+
+                const randomizeLoginKey = () => {
+                    accessKey.value = generateRandomKey();
+                    localStorage.setItem('SL_KEY', accessKey.value);
+                };
+
+                const randomizeInstallKey = () => {
+                    installForm.value.accessKey = generateRandomKey();
+                };
+
+                const installForm = ref({
+                    mode: 'Client',
+                    nodeName: 'Node-' + Math.floor(Math.random()*1000),
+                    serverUrl: window.location.origin,
+                    clientIp: '',
+                    publicIpApi: '',
+                    port: 15002,
+                    accessKey: initialKey
+                });
+
+                const generatedCommand = computed(() => {
+                    let cmd = `sudo ./ServerLatency --Mode ${installForm.value.mode}`;
+                    if (installForm.value.nodeName) cmd += ` --Name "${installForm.value.nodeName}"`;
+                    if (installForm.value.mode === 'Client') {
+                        if (installForm.value.serverUrl) cmd += ` --ServerUrl "${installForm.value.serverUrl}"`;
+                        if (installForm.value.clientIp) cmd += ` --Ip "${installForm.value.clientIp}"`;
+                    } else {
+                        if (installForm.value.port) cmd += ` --Port ${installForm.value.port}`;
+                        if (installForm.value.publicIpApi) cmd += ` --Api "${installForm.value.publicIpApi}"`;
+                    }
+                    if (installForm.value.accessKey) cmd += ` --Key "${installForm.value.accessKey}"`;
+                    cmd += ` --install`;
+                    return cmd;
+                });
+
+                const cmdStatus = "sudo systemctl status serverlatency";
+                const cmdRestart = "sudo nano /etc/systemd/system/serverlatency.service\nsudo systemctl daemon-reload\nsudo systemctl restart serverlatency";
+                const cmdUninstall = "sudo systemctl stop serverlatency && sudo systemctl disable serverlatency && sudo rm /etc/systemd/system/serverlatency.service && sudo systemctl daemon-reload";
+
+                const login = async () => {
+                    authError.value = '';
+                    try {
+                        const res = await fetch(`/api/ServerLatency/Auth?key=${encodeURIComponent(accessKey.value)}`, { method: 'POST' });
+                        if (res.ok) {
+                            isAuthenticated.value = true;
+                            localStorage.setItem('SL_KEY', accessKey.value);
+                            startPolling();
+                        } else {
+                            authError.value = "ACCESS_DENIED";
+                        }
+                    } catch (e) {
+                        authError.value = "CONNECTION_ERROR";
+                    }
+                };
+
+                const logout = () => {
+                    localStorage.removeItem('SL_KEY');
+                    accessKey.value = '';
+                    isAuthenticated.value = false;
+                    if (pollTimer) clearInterval(pollTimer);
+                };
+
+                const startPolling = () => {
+                    fetchData();
+                    pollTimer = setInterval(fetchData, 5000);
+                };
+
+                const fetchData = async () => {
+                    try {
+                        const res = await fetch(`/api/ServerLatency/Matrix?key=${encodeURIComponent(accessKey.value)}`);
+                        if (res.status === 401) { logout(); return; }
+                        const data = await res.json();
+                        nodes.value = data.onlineNodes || [];
+                    } catch (e) { }
+                };
+
+                const copy = (text) => {
+                    navigator.clipboard.writeText(text);
+                };
+
+                const formatTime = (iso) => {
+                    if (!iso) return '-';
+                    return new Date(iso).toLocaleTimeString();
+                };
+
+                onMounted(() => {
+                    // Try auto login
+                    login();
+                });
+
+                onUnmounted(() => {
+                    if (pollTimer) clearInterval(pollTimer);
+                });
+
+                return {
+                    isAuthenticated, accessKey, authError, nodes,
+                    login, logout, copy, formatTime, 
+                    randomizeLoginKey, randomizeInstallKey,
+                    cmdStatus, cmdRestart, cmdUninstall,
+                    installForm, generatedCommand
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
