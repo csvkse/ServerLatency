@@ -175,6 +175,11 @@ public static class ServerApp
         app.MapGet("/", () => Results.Redirect("/index.html"));
         
         Console.WriteLine($"* Server Port : {port}");
+        
+        string? nameFromConfig = builder.Configuration["ServerConfig:ServerName"] ?? builder.Configuration["NodeConfig:NodeName"] ?? builder.Configuration["NodeName"] ?? builder.Configuration["ClientName"];
+        string serverName = string.IsNullOrWhiteSpace(nameFromConfig) ? "Master-Server" : nameFromConfig;
+        Console.WriteLine($"* Server Name : {serverName}");
+
         var accessKey = builder.Configuration["AccessKey"];
         if (!string.IsNullOrEmpty(accessKey))
         {
