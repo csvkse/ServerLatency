@@ -4,7 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Dump - Server Latency</title>
+    <title>Raw Data - Server Latency</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.png" type="image/png">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
@@ -108,7 +110,11 @@
         <!-- Data Dump -->
         <div v-else class="neon-border rounded-xl bg-cyber-surf overflow-hidden shadow-neon">
             <div class="px-4 py-3 border-b border-[#1e1e3a] flex items-center justify-between">
-                <span class="font-display tracking-[.1em] text-sm text-cyber-cyan">RAW_DATA<span class="text-cyber-text">_DUMP</span></span>
+                <div class="flex items-center gap-3">
+                    <img src="/logo.png" alt="Logo" class="h-8 w-8 object-contain drop-shadow-[0_0_8px_rgba(0,240,255,0.6)] rounded-sm">
+                    <h1 class="font-display text-lg tracking-[.15em] text-cyber-cyan">RAW<span class="text-cyber-text">_DATA</span></h1>
+                    <span class="text-xs text-cyber-muted hidden sm:inline">// 实时数据流日志</span>
+                </div>
                 <div class="flex items-center gap-3">
                     <button @click="logout" class="text-xs font-mono text-cyber-red border border-cyber-red/30 px-2 py-1 rounded hover:bg-cyber-red/10">LOGOUT</button>
                     <select onchange="if(this.value) window.location.href = this.value" class="bg-cyber-bg text-cyber-cyan border border-[#1e1e3a] hover:border-cyber-cyan rounded px-2 py-1 outline-none transition-colors cursor-pointer text-[10px] font-mono">
