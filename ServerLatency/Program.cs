@@ -56,6 +56,24 @@ class Program
         // Setup configuration
         var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
         
+        // Map flat environment variables (Docker) to hierarchical configuration keys
+        var envMappings = new Dictionary<string, string>
+        {
+            { "SERVER_PORT", "ServerConfig:Port" },
+            { "SERVER_URL", "NodeConfig:ServerUrl" },
+            { "NODE_NAME", "NodeConfig:NodeName" },
+            { "NODE_IP", "NodeConfig:NodeIp" }
+        };
+        var memConfig = new Dictionary<string, string>();
+        foreach (var mapping in envMappings)
+        {
+            var envVal = Environment.GetEnvironmentVariable(mapping.Key);
+            if (!string.IsNullOrWhiteSpace(envVal))
+            {
+                memConfig[mapping.Value] = envVal;
+            }
+        }
+
         var switchMappings = new Dictionary<string, string>()
         {
             { "-m", "Mode" },
@@ -64,12 +82,12 @@ class Program
             { "--Port", "ServerConfig:Port" },
             { "-k", "AccessKey" },
             { "--Key", "AccessKey" },
-            { "-n", "NodeName" },
-            { "--Name", "NodeName" },
-            { "-u", "ServerUrl" },
-            { "--ServerUrl", "ServerUrl" },
-            { "-ip", "NodeIp" },
-            { "--Ip", "NodeIp" },
+            { "-n", "NodeConfig:NodeName" },
+            { "--Name", "NodeConfig:NodeName" },
+            { "-u", "NodeConfig:ServerUrl" },
+            { "--ServerUrl", "NodeConfig:ServerUrl" },
+            { "-ip", "NodeConfig:NodeIp" },
+            { "--Ip", "NodeConfig:NodeIp" },
             { "-api", "ServerConfig:PublicIpApi" },
             { "--Api", "ServerConfig:PublicIpApi" }
         };
@@ -79,6 +97,7 @@ class Program
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
             .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables()
+            .AddInMemoryCollection(memConfig)
             .AddCommandLine(args, switchMappings);
 
         var config = builder.Build();

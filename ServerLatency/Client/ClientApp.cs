@@ -19,23 +19,10 @@ public static class ClientApp
 {
     public static async Task RunClientAsync(string[] args, IConfigurationRoot config)
     {
-        string GetConfigValue(string configKey, string configSectionKey, string fallbackEnvVar, string defaultValue)
-        {
-            var val = config[$"{configSectionKey}:{configKey}"];
-            if (!string.IsNullOrWhiteSpace(val)) return val;
-            
-            val = config[configKey];
-            if (!string.IsNullOrWhiteSpace(val)) return val;
-
-            val = Environment.GetEnvironmentVariable(fallbackEnvVar);
-            if (!string.IsNullOrWhiteSpace(val)) return val;
-            
-            return defaultValue;
-        }
-
-        string baseUrl = GetConfigValue("ServerUrl", "ClientConfig", "SERVER_URL", "http://localhost:15002");
-        string nodeName = GetConfigValue("NodeName", "NodeConfig", "NODE_NAME", $"Node_{Environment.MachineName}");
-        string accessKey = GetConfigValue("AccessKey", "", "ACCESS_KEY", "");
+        string baseUrl = config.GetValue<string>("NodeConfig:ServerUrl", "http://localhost:15002");
+        string nodeName = config.GetValue<string>("NodeConfig:NodeName", $"Node_{Environment.MachineName}");
+        string accessKey = config.GetValue<string>("AccessKey", "");
+        
         // Argument Parsing Strategy:
         // Filter out flags (-k, --Key) and their values to find true "positional" arguments.
         // This stops "Client" (from -m Client) being mistaken for a NodeName.
@@ -61,7 +48,7 @@ public static class ClientApp
         if (positionals.Count > 1) accessKey = positionals[1]; // 顺序调整：现在第2位是 Key
         if (positionals.Count > 2) nodeName = positionals[2]; // 顺序调整：现在第3位是 Name
 
-        string nodeIp = GetConfigValue("NodeIp", "NodeConfig", "NODE_IP", "");
+        string nodeIp = config.GetValue<string>("NodeConfig:NodeIp", "");
 
         Console.WriteLine($"* Server      : {baseUrl}");
         Console.WriteLine($"* Node Name   : {nodeName}");
