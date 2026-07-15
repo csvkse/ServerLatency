@@ -112,12 +112,12 @@ jobs:
       # Windows 打包为 zip
       - name: Archive production artifacts (Windows)
         if: matrix.os == 'windows-latest'
-        run: Compress-Archive -Path publish_output\* -DestinationPath ServerLatency-${{ matrix.rid }}.zip
+        run: Compress-Archive -Path publish_output\ServerLatency.exe -DestinationPath ServerLatency-${{ matrix.rid }}.zip
 
       # Linux / macOS 打包为 tar.gz
       - name: Archive production artifacts (Unix)
         if: matrix.os != 'windows-latest'
-        run: tar -czvf ServerLatency-${{ matrix.rid }}.tar.gz -C publish_output .
+        run: tar -czvf ServerLatency-${{ matrix.rid }}.tar.gz -C publish_output ServerLatency
 
       # 上传构建产物
       - name: Upload Artifacts
