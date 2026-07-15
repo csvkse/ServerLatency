@@ -31,10 +31,10 @@ public class ServerLatencyWorker : BackgroundService
         _logger = logger;
         _userConfiguredIpApi = config["ServerConfig:PublicIpApi"];
         
-        string? nameFromConfig = config["ServerConfig:ServerName"] ?? config["ClientConfig:ClientName"] ?? config["ClientName"];
+        string? nameFromConfig = config["ServerConfig:ServerName"] ?? config["NodeConfig:NodeName"] ?? config["NodeName"] ?? config["ClientName"];
         _serverName = string.IsNullOrWhiteSpace(nameFromConfig) ? "Master-Server" : nameFromConfig;
         
-        string? ipFromConfig = config["ClientConfig:ClientIp"] ?? config["ClientIp"];
+        string? ipFromConfig = config["NodeConfig:NodeIp"] ?? config["NodeIp"] ?? config["ClientIp"];
         if (!string.IsNullOrWhiteSpace(ipFromConfig))
         {
             _myPublicIp = ipFromConfig;

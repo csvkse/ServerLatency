@@ -213,7 +213,7 @@
                 
                 const isConnected = ref(false);
                 const nodeName = ref(urlParams.get('name') || 'WebNode-' + Math.floor(Math.random() * 99));
-                const nodeIp = ref(urlParams.get('ip') || urlParams.get('clientip') || '');
+                const nodeIp = ref(urlParams.get('ip') || urlParams.get('nodeip') || '');
                 const accessKey = ref(urlParams.get('key') || localStorage.getItem('SL_KEY') || '');
                 const logs = ref([]);
                 const logBox = ref(null);

@@ -36,7 +36,7 @@ public class LatencyHub : Hub
         }
     }
 
-    public async Task JoinPingNode(string name, string key, string? clientIp)
+    public async Task JoinPingNode(string name, string key, string? nodeIp)
     {
         if (!string.IsNullOrEmpty(_accessKey) && key != _accessKey) 
         {
@@ -45,7 +45,7 @@ public class LatencyHub : Hub
             return;
         }
 
-        var ip = string.IsNullOrWhiteSpace(clientIp) ? Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString() : clientIp;
+        var ip = string.IsNullOrWhiteSpace(nodeIp) ? Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString() : nodeIp;
         ip = NormalizeIp(ip);
 
         if (string.IsNullOrWhiteSpace(ip))

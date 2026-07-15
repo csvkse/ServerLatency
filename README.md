@@ -80,9 +80,9 @@ chmod +x ServerLatency
 {
   "Mode": "Client",                          // 运行模式: "Client" 或 "Server"
   "AccessKey": "MySecretKey",                // 认证密钥 (空则不鉴权)
-  "ClientConfig": {
+  "NodeConfig": {
     "ServerUrl": "http://localhost:15002",   // [Client] 控制端地址
-    "ClientName": ""                         // [Client] 节点名称 (留空自动用机器名)
+    "NodeName": ""                           // [Client] 节点名称 (留空自动用机器名)
   },
   "ServerConfig": {
     "Port": 15002,                           // [Server] 监听端口
@@ -91,7 +91,7 @@ chmod +x ServerLatency
 }
 ```
 
-> 注：`ClientConfig:ClientIp` 不在默认配置文件中，需通过命令行 `-ip` 或环境变量 `CLIENT_IP` 设置替代 IP。
+> 注：`NodeConfig:NodeIp` 不在默认配置文件中，需通过命令行 `-ip` 或环境变量 `NODE_IP` 设置替代 IP。
 
 ### 环境变量
 
@@ -99,9 +99,9 @@ chmod +x ServerLatency
 |--------|----------|------|--------|
 | `MODE` | `Mode` | 运行模式 (`Server` / `Client`) | `Client` |
 | `ACCESS_KEY` | `AccessKey` | 认证密钥（空则关闭鉴权） | (空) |
-| `SERVER_URL` | `ClientConfig:ServerUrl` | [Client] 控制端地址 | `http://localhost:15002` |
-| `CLIENT_NAME` | `ClientConfig:ClientName` | [Client] 节点名称 | `Client_{MachineName}` |
-| `CLIENT_IP` | `ClientConfig:ClientIp` | [Client] 替代 IP（覆盖自动识别） | (空) |
+| `SERVER_URL` | `NodeConfig:ServerUrl` | [Client] 控制端地址 | `http://localhost:15002` |
+| `NODE_NAME` | `NodeConfig:NodeName` | [Client] 节点名称 | `Node_{MachineName}` |
+| `NODE_IP` | `NodeConfig:NodeIp` | [Client/Server] 替代 IP（覆盖自动识别） | (空) |
 | `SERVER_PORT` | `ServerConfig:Port` | [Server] 监听端口 | `15002` |
 | `DOTNET_ENVIRONMENT` | — | 环境（`Development` 会额外加载 `appsettings.Development.json` 并映射 OpenAPI） | `Production` |
 
@@ -114,9 +114,9 @@ chmod +x ServerLatency
 | `-m` | `--Mode` | `Mode` | 运行模式 (`Server` / `Client`) |
 | `-p` | `--Port` | `ServerConfig:Port` | [Server] 监听端口 |
 | `-k` | `--Key` | `AccessKey` | 认证密钥 |
-| `-n` | `--Name` | `ClientConfig:ClientName` | [Client] 节点名称 |
-| `-u` | `--ServerUrl` | `ClientConfig:ServerUrl` | [Client] 控制端地址 |
-| `-ip` | `--Ip` | `ClientConfig:ClientIp` | [Client] 替代 IP（覆盖自动识别与被探测 IP） |
+| `-n` | `--Name` | `NodeConfig:NodeName` | [Client] 节点名称 |
+| `-u` | `--ServerUrl` | `NodeConfig:ServerUrl` | [Client] 控制端地址 |
+| `-ip` | `--Ip` | `NodeConfig:NodeIp` | [Client/Server] 替代 IP（覆盖自动识别与被探测 IP） |
 | `-i` | `--install` | — | [Linux] 注册 systemd 服务 |
 | `-u`(服务) | `--uninstall` | — | [Linux] 卸载 systemd 服务 |
 
@@ -124,7 +124,7 @@ chmod +x ServerLatency
 
 ```bash
 ./ServerLatency "http://your-server-ip:15002" "MySecretKey" "Worker-01"
-# 格式: [ServerUrl] [AccessKey] [ClientName]，默认走 Client 模式
+# 格式: [ServerUrl] [AccessKey] [NodeName]，默认走 Client 模式
 ```
 
 ---
@@ -162,6 +162,14 @@ chmod +x ServerLatency
 行为细节：
 - 采用原生 SignalR 客户端，支持自动断线重连 (`AutomaticReconnect`)。
 - 配置 `-ip` 后，上报数据的 `SourceIp` 强制为该 IP，覆盖真实出口 IP。
+
+> **💡 获取真实 IP 失败时的解决方案 (反代/K3S 环境)**
+> 
+> 如果你的 Server 部署在复杂的容器网络或反向代理（如 K3S / Traefik / Docker 端口映射）后方，服务端可能无法直接拿到客户端底层的真实外网 IP，从而只能将其标记为 `Unknown` 或内网 IP。
+> 此时建议使用**选项 A**：在启动客户端时，通过 `--Ip` 参数配合 `curl` 让客户端自动获取并主动上报自身的真实外网 IP：
+> ```bash
+> ./ServerLatency -m Client --Key "MySecretKey" --ServerUrl "http://your-server-ip:15002" --Name "Worker-01" --Ip "$(curl -s https://api.ip.sb/ip)"
+> ```
 
 ### 3. 浏览器节点模式 (Web Node)
 
@@ -292,7 +300,7 @@ docker run -d --restart always \
   -e MODE="Client" \
   -e SERVER_URL="http://your-server-ip:15002" \
   -e ACCESS_KEY="MySecretKey" \
-  -e CLIENT_NAME="Shanghai-Node" \
+  -e NODE_NAME="Shanghai-Node" \
   ghcr.io/csvkse/serverlatency:latest
 ```
 

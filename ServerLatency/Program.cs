@@ -64,12 +64,12 @@ class Program
             { "--Port", "ServerConfig:Port" },
             { "-k", "AccessKey" },
             { "--Key", "AccessKey" },
-            { "-n", "ClientName" },
-            { "--Name", "ClientName" },
+            { "-n", "NodeName" },
+            { "--Name", "NodeName" },
             { "-u", "ServerUrl" },
             { "--ServerUrl", "ServerUrl" },
-            { "-ip", "ClientIp" },
-            { "--Ip", "ClientIp" },
+            { "-ip", "NodeIp" },
+            { "--Ip", "NodeIp" },
             { "-api", "ServerConfig:PublicIpApi" },
             { "--Api", "ServerConfig:PublicIpApi" }
         };

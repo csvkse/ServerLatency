@@ -153,7 +153,7 @@
                             </div>
                             <div>
                                 <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ NODE_IP <span class="text-cyber-dim">(Override)</span></label>
-                                <input v-model="installForm.clientIp" placeholder="e.g. 192.168.1.100" class="cyber-input w-full rounded p-2 text-sm font-mono">
+                                <input v-model="installForm.nodeIp" placeholder="e.g. 192.168.1.100" class="cyber-input w-full rounded p-2 text-sm font-mono">
                                 <p class="text-[10px] text-cyber-dim mt-1">Override the IP address reported to peers</p>
                             </div>
                         </template>
@@ -282,7 +282,7 @@
                     mode: 'Client',
                     nodeName: 'Node-' + Math.floor(Math.random()*1000),
                     serverUrl: window.location.origin,
-                    clientIp: '',
+                    nodeIp: '',
                     publicIpApi: '',
                     port: 15002,
                     accessKey: initialKey
@@ -293,7 +293,7 @@
                     if (installForm.value.nodeName) cmd += ` --Name "${installForm.value.nodeName}"`;
                     if (installForm.value.mode === 'Client') {
                         if (installForm.value.serverUrl) cmd += ` --ServerUrl "${installForm.value.serverUrl}"`;
-                        if (installForm.value.clientIp) cmd += ` --Ip "${installForm.value.clientIp}"`;
+                        if (installForm.value.nodeIp) cmd += ` --Ip "${installForm.value.nodeIp}"`;
                     } else {
                         if (installForm.value.port) cmd += ` --Port ${installForm.value.port}`;
                         if (installForm.value.publicIpApi) cmd += ` --Api "${installForm.value.publicIpApi}"`;
