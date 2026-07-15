@@ -40,6 +40,7 @@ public class LatencyHub : Hub
     {
         if (!string.IsNullOrEmpty(_accessKey) && key != _accessKey) 
         {
+            Console.WriteLine($"[Auth Failed] Node '{name}' provided wrong access key.");
             Context.Abort();
             return;
         }
@@ -47,8 +48,14 @@ public class LatencyHub : Hub
         var ip = string.IsNullOrWhiteSpace(clientIp) ? Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString() : clientIp;
         ip = NormalizeIp(ip);
 
-        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(ip))
+        if (string.IsNullOrWhiteSpace(ip))
         {
+            ip = "Unknown";
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            Console.WriteLine($"[Validation Failed] Node connection attempt with empty name.");
             Context.Abort();
             return;
         }
