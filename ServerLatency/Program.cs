@@ -84,9 +84,11 @@ class Program
         var config = builder.Build();
 
         string mode = config["Mode"] ?? "Client";
+        var version = typeof(Program).Assembly.GetName().Version;
+        var versionStr = version != null ? $"v{version.Major}.{version.Minor}.{version.Build}" : "unknown";
         
         Console.WriteLine("==========================================================");
-        Console.WriteLine(" ServerLatency (LatencyMatrix) - v1.0.9");
+        Console.WriteLine($" ServerLatency (LatencyMatrix) - {versionStr}");
         Console.WriteLine("==========================================================");
         Console.WriteLine($"* Mode        : [{mode.ToUpper()}]");
         Console.WriteLine($"* Environment : {env}");
