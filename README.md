@@ -51,6 +51,33 @@
 
 ## ⚡ 快速开始
 
+### 一键安装（Linux 推荐）
+
+> 下载二进制 → 注册为 systemd 服务 → 开机自启，一条命令搞定。
+
+**安装服务端：**
+
+```bash
+wget -qO- https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz \
+  | tar -xz && chmod +x ServerLatency && \
+  sudo ./ServerLatency -m Server -p 15002 -k "MySecretKey" --install
+```
+
+**安装客户端探测节点：**
+
+```bash
+wget -qO- https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz \
+  | tar -xz && chmod +x ServerLatency && \
+  sudo ./ServerLatency -m Client -u "http://your-server-ip:15002" -k "MySecretKey" -n "Worker-01" --install
+```
+
+> 安装完成后服务立即启动，查看状态：`sudo systemctl status serverlatency`  
+> 可在 **Admin 面板 → Installation Guide** 页面可视化生成以上命令。
+
+---
+
+### 手动运行（前台调试）
+
 ```bash
 # 下载 Linux 单文件
 wget https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz
