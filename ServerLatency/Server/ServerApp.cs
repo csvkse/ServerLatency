@@ -75,10 +75,13 @@ public static class ServerApp
         });
 
         // 启用反向代理 IP 解析 (适配 Nginx 等)
-        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        var forwardedHeadersOptions = new ForwardedHeadersOptions
         {
             ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
-        });
+        };
+        forwardedHeadersOptions.KnownNetworks.Clear();
+        forwardedHeadersOptions.KnownProxies.Clear();
+        app.UseForwardedHeaders(forwardedHeadersOptions);
 
         if (app.Environment.IsDevelopment())
         {
