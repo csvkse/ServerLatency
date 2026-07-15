@@ -79,7 +79,7 @@ public static class ServerApp
         {
             ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
         };
-        forwardedHeadersOptions.KnownNetworks.Clear();
+        forwardedHeadersOptions.KnownIPNetworks.Clear();
         forwardedHeadersOptions.KnownProxies.Clear();
         app.UseForwardedHeaders(forwardedHeadersOptions);
 
@@ -180,7 +180,7 @@ public static class ServerApp
         string serverName = string.IsNullOrWhiteSpace(nameFromConfig) ? "Master-Server" : nameFromConfig;
         Console.WriteLine($"* Server Name : {serverName}");
 
-        var accessKey = builder.Configuration["AccessKey"];
+        accessKey = builder.Configuration["AccessKey"];
         if (!string.IsNullOrEmpty(accessKey))
         {
             Console.WriteLine($"* Access Key  : {accessKey.Substring(0, Math.Min(4, accessKey.Length))}***");

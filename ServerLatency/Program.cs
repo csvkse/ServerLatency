@@ -68,7 +68,7 @@ class Program
             { "MODE", "Mode" },
             { "PUBLIC_IP_API", "ServerConfig:PublicIpApi" }
         };
-        var memConfig = new Dictionary<string, string>();
+        var memConfig = new Dictionary<string, string?>();
         foreach (var mapping in envMappings)
         {
             var envVal = Environment.GetEnvironmentVariable(mapping.Key);
