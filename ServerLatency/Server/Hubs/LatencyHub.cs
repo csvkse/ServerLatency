@@ -81,20 +81,24 @@ public class LatencyHub : Hub
         if (!string.IsNullOrEmpty(_accessKey) && key != _accessKey) return;
         
         var remoteIp = NormalizeIp(Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString());
+        ServerLatency.Common.Models.LatencyNode? currentNode = null;
 
         foreach (var node in ServerState.OnlineNodes.Values)
         {
             if (node.ConnectionId == Context.ConnectionId || node.Ip == remoteIp)
             {
                 node.LastSeen = DateTime.Now;
+                if (node.ConnectionId == Context.ConnectionId) currentNode = node;
             }
         }
 
         if (items == null || items.Count == 0) return;
+        
+        var fallbackIp = currentNode?.Ip ?? remoteIp;
 
         foreach (var item in items)
         {
-            item.SourceIp = NormalizeIp(string.IsNullOrEmpty(item.SourceIp) ? remoteIp : item.SourceIp);
+            item.SourceIp = NormalizeIp(string.IsNullOrEmpty(item.SourceIp) ? fallbackIp : item.SourceIp);
             item.TargetIp = NormalizeIp(item.TargetIp);
 
             if (string.IsNullOrEmpty(item.SourceIp) || string.IsNullOrEmpty(item.TargetIp)) continue;

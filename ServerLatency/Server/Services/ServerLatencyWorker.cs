@@ -33,6 +33,12 @@ public class ServerLatencyWorker : BackgroundService
         
         string? nameFromConfig = config["ServerConfig:ServerName"] ?? config["ClientConfig:ClientName"] ?? config["ClientName"];
         _serverName = string.IsNullOrWhiteSpace(nameFromConfig) ? "Master-Server" : nameFromConfig;
+        
+        string? ipFromConfig = config["ClientConfig:ClientIp"] ?? config["ClientIp"];
+        if (!string.IsNullOrWhiteSpace(ipFromConfig))
+        {
+            _myPublicIp = ipFromConfig;
+        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
