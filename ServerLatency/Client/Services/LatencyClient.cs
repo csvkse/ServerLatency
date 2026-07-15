@@ -68,6 +68,21 @@ public class LatencyClient
             await Task.Delay(5000, cancellationToken);
         };
 
+        _connection.Reconnected += async (connectionId) =>
+        {
+            Console.WriteLine($"[Reconnected] Reconnected to SignalR Hub. ConnectionId: {connectionId}");
+            try
+            {
+                await _connection.InvokeAsync("JoinPingNode", _nodeName, _accessKey, _nodeIp, cancellationToken);
+                Console.WriteLine("[Reconnected] Joined ping node successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Reconnected Error] Failed to join ping node: {ex.Message}");
+            }
+        };
+
+
         // Start periodic ping
         _ = Task.Run(() => PeriodicPingLoopAsync(cancellationToken), cancellationToken);
 

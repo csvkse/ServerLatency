@@ -38,6 +38,9 @@ class Program
             Console.WriteLine("  --install                  Install as a systemd service.");
             Console.WriteLine("  --uninstall                Uninstall the systemd service.");
             Console.WriteLine();
+            Console.WriteLine("Other:");
+            Console.WriteLine("  --update                   Check and download the latest version from GitHub.");
+            Console.WriteLine();
             return;
         }
 
@@ -50,6 +53,13 @@ class Program
         if (args.Any(a => a == "--uninstall"))
         {
             await LinuxServiceInstaller.HandleUninstallAsync();
+            return;
+        }
+
+        // Check for Update command
+        if (args.Any(a => a == "--update"))
+        {
+            await ServerLatency.Common.Utils.Updater.UpdateAsync();
             return;
         }
 
