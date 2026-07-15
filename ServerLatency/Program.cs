@@ -84,9 +84,22 @@ class Program
         var config = builder.Build();
 
         string mode = config["Mode"] ?? "Client";
+        var version = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
         
-        Console.WriteLine($"ServerLatency Starting in [{mode.ToUpper()}] mode...");
-        Console.WriteLine($"Environment: {env}");
+        Console.WriteLine("==========================================================");
+        Console.WriteLine($" ServerLatency (LatencyMatrix) - v{version}");
+        Console.WriteLine("==========================================================");
+        Console.WriteLine($"* Mode        : [{mode.ToUpper()}]");
+        Console.WriteLine($"* Environment : {env}");
+        if (mode.Equals("Client", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine("----------------------------------------------------------");
+            Console.WriteLine("[💡 Tip] 如果你的 Client 无法被 Server 识别真实的公网 IP，");
+            Console.WriteLine("         可以在启动时附带 --Ip \"$(curl -s https://api.ip.sb/ip)\"");
+            Console.WriteLine("         强制使用本机的外网出口 IP。");
+        }
+        Console.WriteLine("==========================================================");
+        Console.WriteLine();
 
         if (mode.Equals("Server", StringComparison.OrdinalIgnoreCase))
         {

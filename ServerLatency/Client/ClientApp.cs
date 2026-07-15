@@ -63,10 +63,11 @@ public static class ClientApp
 
         string clientIp = GetConfigValue("ClientIp", "ClientConfig", "CLIENT_IP", "");
 
-        Console.WriteLine($"Server: {baseUrl}");
-        Console.WriteLine($"Client Name: {clientName}");
-        if (!string.IsNullOrEmpty(clientIp)) Console.WriteLine($"Client IP (Override): {clientIp}");
-        if(!string.IsNullOrEmpty(accessKey)) Console.WriteLine($"Access Key: {accessKey.Substring(0, Math.Min(4, accessKey.Length))}***");
+        Console.WriteLine($"* Server      : {baseUrl}");
+        Console.WriteLine($"* Client Name : {clientName}");
+        if (!string.IsNullOrEmpty(clientIp)) Console.WriteLine($"* Client IP   : {clientIp} (Override)");
+        if(!string.IsNullOrEmpty(accessKey)) Console.WriteLine($"* Access Key  : {accessKey.Substring(0, Math.Min(4, accessKey.Length))}***");
+        Console.WriteLine("----------------------------------------------------------");
 
         var cts = new CancellationTokenSource();
         Console.CancelKeyPress += (s, e) =>
