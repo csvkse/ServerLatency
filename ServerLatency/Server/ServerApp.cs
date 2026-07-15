@@ -171,6 +171,16 @@ public static class ServerApp
             });
         });
 
+        // Version
+        api.MapGet("/Version", () =>
+        {
+            var attr = System.Reflection.Assembly.GetExecutingAssembly()
+                .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .FirstOrDefault() as System.Reflection.AssemblyInformationalVersionAttribute;
+            var version = attr?.InformationalVersion?.Split('+')[0] ?? "1.0.0";
+            return Results.Content($"{{\"version\":\"v{version}\"}}", "application/json");
+        });
+
         // Default to index.html
         app.MapGet("/", () => Results.Redirect("/index.html"));
         
