@@ -174,7 +174,18 @@ public static class ServerApp
         // Default to index.html
         app.MapGet("/", () => Results.Redirect("/index.html"));
         
-        Console.WriteLine($"Server listening on port {port} (Minimal API)...");
+        Console.WriteLine($"* Server Port : {port}");
+        var accessKey = builder.Configuration["AccessKey"];
+        if (!string.IsNullOrEmpty(accessKey))
+        {
+            Console.WriteLine($"* Access Key  : {accessKey.Substring(0, Math.Min(4, accessKey.Length))}***");
+        }
+        else
+        {
+            Console.WriteLine($"* Access Key  : [DISABLED]");
+        }
+        Console.WriteLine("----------------------------------------------------------");
+        
         await app.RunAsync();
     }
 

@@ -28,7 +28,13 @@ RUN dotnet build "./ServerLatency.csproj" -c $BUILD_CONFIGURATION -o /app/build
 # 此阶段用于发布要复制到最终阶段的服务项目
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./ServerLatency.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true
+ARG APP_VERSION
+# 使用单行脚本根据 APP_VERSION 决定构建命令
+RUN if [ -n "$APP_VERSION" ]; then \
+      dotnet publish "./ServerLatency.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true -p:Version=$APP_VERSION; \
+    else \
+      dotnet publish "./ServerLatency.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true; \
+    fi
 
 # 从 VS 启动以支持常规模式(不使用调试配置时为默认值)下的调试时，此阶段用作最终阶段的基础
 FROM base AS aotdebug

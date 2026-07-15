@@ -101,6 +101,16 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
+      - name: Extract Version
+        id: extract_version
+        run: |
+          REF="${{ github.ref }}"
+          if [[ "$REF" == refs/tags/v* ]]; then
+            echo "version=${REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          else
+            echo "version=" >> $GITHUB_OUTPUT
+          fi
+
       # 核心步骤：原生构建
       - name: Build and push by digest
         id: build
@@ -112,6 +122,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=build-${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=build-${{ matrix.platform }}
+          build-args: |
+            APP_VERSION=${{ steps.extract_version.outputs.version }}
           # PR事件不推送，其他事件推送digest
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
 
