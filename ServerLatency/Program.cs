@@ -64,7 +64,8 @@ class Program
             { "NODE_NAME", "NodeConfig:NodeName" },
             { "NODE_IP", "NodeConfig:NodeIp" },
             { "ACCESS_KEY", "AccessKey" },
-            { "MODE", "Mode" }
+            { "MODE", "Mode" },
+            { "PUBLIC_IP_API", "ServerConfig:PublicIpApi" }
         };
         var memConfig = new Dictionary<string, string>();
         foreach (var mapping in envMappings)
