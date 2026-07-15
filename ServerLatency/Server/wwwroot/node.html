@@ -206,10 +206,12 @@
         const { createApp, ref, nextTick } = Vue;
         createApp({
             setup() {
+                const urlParams = new URLSearchParams(window.location.search);
+                
                 const isConnected = ref(false);
-                const nodeName = ref('WebNode-' + Math.floor(Math.random() * 99));
-                const nodeIp = ref('');
-                const accessKey = ref('');
+                const nodeName = ref(urlParams.get('name') || 'WebNode-' + Math.floor(Math.random() * 99));
+                const nodeIp = ref(urlParams.get('reportip') || urlParams.get('ip') || '');
+                const accessKey = ref(urlParams.get('key') || localStorage.getItem('SL_KEY') || '');
                 const logs = ref([]);
                 const logBox = ref(null);
 
@@ -275,20 +277,58 @@
                     addLog("Stopped.");
                 };
 
+                const probeTarget = async (t) => {
+                    let baseIp = t;
+                    let hasPort = false;
+                    
+                    if (t.includes(':')) {
+                        if (t.indexOf(':') === t.lastIndexOf(':')) {
+                            // IPv4 with port
+                            hasPort = true;
+                        } else {
+                            // IPv6
+                            if (!t.startsWith('[')) baseIp = `[${t}]`;
+                            if (baseIp.includes(']:')) hasPort = true;
+                        }
+                    }
+
+                    const urls = hasPort ? 
+                        [`http://${baseIp}`] : 
+                        [`http://${baseIp}:80`, `https://${baseIp}:443`, `http://${baseIp}:8080`, `http://${baseIp}:15002`];
+
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+                    const doFetch = async (url) => {
+                        const start = performance.now();
+                        try {
+                            await fetch(url, { method: 'HEAD', mode: 'no-cors', cache: 'no-cache', signal: controller.signal });
+                            return performance.now() - start;
+                        } catch (err) {
+                            throw err;
+                        }
+                    };
+
+                    try {
+                        const latency = await Promise.any(urls.map(doFetch));
+                        controller.abort(); // Cancel remaining requests
+                        clearTimeout(timeoutId);
+                        return latency;
+                    } catch (e) {
+                        clearTimeout(timeoutId);
+                        return -1;
+                    }
+                };
+
                 const runPing = async () => {
                     if (!isConnected.value || targets.length === 0) return;
 
                     const reports = [];
-                    for (const t of targets) {
-                        if (t === nodeIp.value) continue;
+                    // Probe all targets concurrently to avoid blocking
+                    await Promise.all(targets.map(async (t) => {
+                        if (t === nodeIp.value) return;
 
-                        const start = performance.now();
-                        let lat = -1;
-                        try {
-                            // HTTP Ping Simulation
-                            await fetch(`//${t}`, { method: 'HEAD', mode: 'no-cors', cache: 'no-cache' });
-                            lat = performance.now() - start;
-                        } catch (e) { lat = -1; }
+                        const lat = await probeTarget(t);
 
                         reports.push({
                             sourceName: nodeName.value,
@@ -297,7 +337,7 @@
                             latencyMs: lat,
                             isSuccess: lat >= 0
                         });
-                    }
+                    }));
 
                     if (reports.length > 0 && connection && connection.state === signalR.HubConnectionState.Connected) {
                         try {

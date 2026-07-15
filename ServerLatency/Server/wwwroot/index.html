@@ -410,14 +410,24 @@
                 };
 
                 const uniqueNodes = computed(() => {
-                    const seenNames = new Set();
+                    const seenIps = new Map();
                     const result = [];
                     for (const n of onlineNodes.value) {
-                        if (!n || !n.name) continue;
-                        const nameKey = n.name.trim();
-                        if (seenNames.has(nameKey)) continue;
-                        seenNames.add(nameKey);
-                        result.push(n);
+                        if (!n || !n.ip) continue;
+                        
+                        const ipKey = n.ip;
+                        if (seenIps.has(ipKey)) {
+                            // Merge names if multiple nodes share the same IP
+                            const existing = seenIps.get(ipKey);
+                            if (!existing.name.includes(n.name.trim())) {
+                                existing.name += ' / ' + n.name.trim();
+                            }
+                        } else {
+                            // Deep clone to avoid mutating the original object
+                            const clone = { ...n };
+                            seenIps.set(ipKey, clone);
+                            result.push(clone);
+                        }
                     }
                     return result;
                 });

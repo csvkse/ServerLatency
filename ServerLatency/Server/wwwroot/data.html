@@ -32,11 +32,15 @@
                     },
                     boxShadow: {
                         'neon': '0 0 8px rgba(0,240,255,.3)',
+                        'neon-md': '0 0 16px rgba(0,240,255,.4)',
                     }
                 }
             }
         }
     </script>
+    
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
     <style>
         * { scrollbar-width: thin; scrollbar-color: #1a1a2e #0a0a0f; }
@@ -46,6 +50,21 @@
         ::-webkit-scrollbar-track { background: #0a0a0f; }
         ::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #2a2a4e; }
+
+        .cyber-input {
+            background: #1a1a2e; border: 1px solid #1e1e3a; color: #e8e8f0;
+            transition: border-color .3s, box-shadow .3s;
+        }
+        .cyber-input:focus {
+            outline: none; border-color: #00f0ff; box-shadow: 0 0 8px rgba(0,240,255,.25);
+        }
+        
+        .btn-neon-primary {
+            background: rgba(0,240,255,.15); border: 1px solid #00f0ff; color: #00f0ff; transition: all .2s;
+        }
+        .btn-neon-primary:hover {
+            background: rgba(0,240,255,.25); box-shadow: 0 0 16px rgba(0,240,255,.35);
+        }
 
         .neon-border {
             border: 1px solid #1e1e3a;
@@ -73,11 +92,25 @@
 </head>
 
 <body class="min-h-screen bg-cyber-bg text-cyber-text bg-grid p-4 md:p-8">
-    <div class="max-w-4xl mx-auto">
-        <div class="neon-border rounded-xl bg-cyber-surf overflow-hidden shadow-neon">
+    <div id="app" class="max-w-4xl mx-auto">
+        <!-- Auth Modal -->
+        <div v-if="!isAuthenticated" class="min-h-[80vh] flex items-center justify-center p-4">
+            <div class="bg-cyber-surf border border-[#1e1e3a] p-8 rounded-xl shadow-neon-md w-full max-w-sm text-center">
+                <h2 class="font-display text-cyber-cyan mb-6 tracking-widest">AUTHENTICATION</h2>
+                <div class="relative mb-4">
+                    <input v-model="accessKey" type="text" placeholder="Enter Access Key" class="cyber-input w-full rounded p-3 text-center font-mono tracking-widest pr-10" @keyup.enter="login">
+                </div>
+                <button @click="login" class="btn-neon-primary w-full py-2.5 rounded font-display tracking-widest font-bold">LOGIN</button>
+                <div v-if="authError" class="text-cyber-red text-xs mt-3 font-mono">{{ authError }}</div>
+            </div>
+        </div>
+
+        <!-- Data Dump -->
+        <div v-else class="neon-border rounded-xl bg-cyber-surf overflow-hidden shadow-neon">
             <div class="px-4 py-3 border-b border-[#1e1e3a] flex items-center justify-between">
                 <span class="font-display tracking-[.1em] text-sm text-cyber-cyan">RAW_DATA<span class="text-cyber-text">_DUMP</span></span>
                 <div class="flex items-center gap-3">
+                    <button @click="logout" class="text-xs font-mono text-cyber-red border border-cyber-red/30 px-2 py-1 rounded hover:bg-cyber-red/10">LOGOUT</button>
                     <select onchange="if(this.value) window.location.href = this.value" class="bg-cyber-bg text-cyber-cyan border border-[#1e1e3a] hover:border-cyber-cyan rounded px-2 py-1 outline-none transition-colors cursor-pointer text-[10px] font-mono">
                         <option value="" disabled selected>[ PAGE_JUMP ]</option>
                         <option value="/index.html">LATENCY_MATRIX</option>
@@ -89,29 +122,83 @@
                 </div>
             </div>
             
-            <div class="p-4" id="content-container">
-                <div id="loading" class="text-cyber-dim font-mono text-xs animate-pulse">// Loading data stream...</div>
+            <div class="p-4">
+                <div v-if="loading" class="text-cyber-dim font-mono text-xs animate-pulse">// Loading data stream...</div>
+                <pre v-else class="code-block p-4 text-cyber-green/90 overflow-x-auto max-h-[70vh]">{{ dumpData }}</pre>
             </div>
         </div>
     </div>
 
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const key = params.get('key') || '';
-        fetch(`/api/ServerLatency/Matrix?key=${encodeURIComponent(key)}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('loading').style.display = 'none';
-                const container = document.getElementById('content-container');
-                const pre = document.createElement('pre');
-                pre.className = 'code-block p-4 text-cyber-green/90 overflow-x-auto max-h-[70vh]';
-                pre.textContent = JSON.stringify(data, null, 2);
-                container.appendChild(pre);
-            })
-            .catch(error => {
-                document.getElementById('loading').innerHTML = '<span class="text-cyber-red">Error: ' + error + '</span>';
-                console.error('Error:', error);
-            });
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const params = new URLSearchParams(window.location.search);
+                const urlKey = params.get('key');
+                let initialKey = urlKey || localStorage.getItem('SL_KEY') || '';
+
+                const isAuthenticated = ref(false);
+                const accessKey = ref(initialKey);
+                const authError = ref('');
+                const loading = ref(true);
+                const dumpData = ref('');
+
+                const login = async () => {
+                    authError.value = '';
+                    try {
+                        const res = await fetch(`/api/ServerLatency/Auth?key=${encodeURIComponent(accessKey.value)}`, { method: 'POST' });
+                        if (res.ok) {
+                            isAuthenticated.value = true;
+                            localStorage.setItem('SL_KEY', accessKey.value);
+                            fetchData();
+                        } else {
+                            authError.value = "ACCESS_DENIED";
+                        }
+                    } catch (e) {
+                        authError.value = "CONNECTION_ERROR";
+                    }
+                };
+
+                const logout = () => {
+                    localStorage.removeItem('SL_KEY');
+                    accessKey.value = '';
+                    isAuthenticated.value = false;
+                    dumpData.value = '';
+                };
+
+                const fetchData = async () => {
+                    loading.value = true;
+                    try {
+                        const res = await fetch(`/api/ServerLatency/Matrix?key=${encodeURIComponent(accessKey.value)}`);
+                        if (res.status === 401) { logout(); return; }
+                        const data = await res.json();
+                        // Verify if data is actually authenticated (handles optional auth endpoints gracefully)
+                        if (data.isAuth === false && accessKey.value !== '') {
+                            logout();
+                            authError.value = "ACCESS_DENIED";
+                            return;
+                        }
+                        dumpData.value = JSON.stringify(data, null, 2);
+                    } catch (e) {
+                        dumpData.value = "Error fetching data: " + e.message;
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                onMounted(() => {
+                    if (accessKey.value) {
+                        login();
+                    }
+                });
+
+                return {
+                    isAuthenticated, accessKey, authError, loading, dumpData,
+                    login, logout
+                };
+            }
+        }).mount('#app');
     </script>
 </body>
 
