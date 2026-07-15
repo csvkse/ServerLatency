@@ -61,6 +61,7 @@ class Program
         {
             { "SERVER_PORT", "ServerConfig:Port" },
             { "SERVER_URL", "NodeConfig:ServerUrl" },
+            { "SERVER_NAME", "ServerConfig:ServerName" },
             { "NODE_NAME", "NodeConfig:NodeName" },
             { "NODE_IP", "NodeConfig:NodeIp" },
             { "ACCESS_KEY", "AccessKey" },

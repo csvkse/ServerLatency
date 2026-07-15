@@ -157,10 +157,11 @@ chmod +x ServerLatency
 |--------|----------|------|--------|
 | `MODE` | `Mode` | 运行模式 (`Server` / `Client`) | `Client` |
 | `ACCESS_KEY` | `AccessKey` | 认证密钥（空则关闭鉴权） | (空) |
+| `SERVER_PORT` | `ServerConfig:Port` | [Server] 监听端口 | `15002` |
+| `SERVER_NAME` | `ServerConfig:ServerName` | [Server] 服务端节点名称 | `Master-Server` |
 | `SERVER_URL` | `NodeConfig:ServerUrl` | [Client] 控制端地址 | `http://localhost:15002` |
 | `NODE_NAME` | `NodeConfig:NodeName` | [Client] 节点名称 | `Node_{MachineName}` |
 | `NODE_IP` | `NodeConfig:NodeIp` | [Client/Server] 替代 IP（覆盖自动识别） | (空) |
-| `SERVER_PORT` | `ServerConfig:Port` | [Server] 监听端口 | `15002` |
 
 ### 命令行参数
 
