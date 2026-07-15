@@ -39,11 +39,15 @@
 
 ## 📸 界面预览
 
-| 延迟矩阵大屏 (Matrix) | 原始数据视图 (Data) |
+**延迟矩阵大屏 (Matrix)**
+<br/>
+<img src="imgs/延迟矩阵.png" width="100%">
+
+| 原始数据视图 (Data) | 一键安装生成器 (Admin) |
 | :---: | :---: |
-| <img src="imgs/延迟矩阵.png" width="400"> | <img src="imgs/数据.png" width="400"> |
-| **一键安装生成器 (Admin)** | **浏览器免部署节点 (Web Node)** |
-| <img src="imgs/控制面板.png" width="400"> | <img src="imgs/浏览器节点.png" width="400"> |
+| <img src="imgs/数据.png" width="400"> | <img src="imgs/控制面板.png" width="400"> |
+| **浏览器免部署节点 (Web Node)** | |
+| <img src="imgs/浏览器节点.png" width="400"> | |
 
 ---
 
