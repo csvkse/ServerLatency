@@ -86,7 +86,7 @@ class Program
         string mode = config["Mode"] ?? "Client";
         
         Console.WriteLine("==========================================================");
-        Console.WriteLine(" ServerLatency (LatencyMatrix) - v1.0.8");
+        Console.WriteLine(" ServerLatency (LatencyMatrix) - v1.0.9");
         Console.WriteLine("==========================================================");
         Console.WriteLine($"* Mode        : [{mode.ToUpper()}]");
         Console.WriteLine($"* Environment : {env}");

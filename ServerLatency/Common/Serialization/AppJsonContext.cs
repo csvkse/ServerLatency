@@ -16,6 +16,7 @@ namespace ServerLatency.Common.Serialization;
 [JsonSerializable(typeof(SseMessage))]
 [JsonSerializable(typeof(object))]
 [JsonSerializable(typeof(string))]
+[JsonSerializable(typeof(object[]))]
 public partial class AppJsonContext : JsonSerializerContext
 {
 }
