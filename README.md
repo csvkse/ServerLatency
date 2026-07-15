@@ -46,8 +46,8 @@
 | 原始数据视图 (Data) | 一键安装生成器 (Admin) |
 | :---: | :---: |
 | <img src="imgs/数据.png" width="400"> | <img src="imgs/控制面板.png" width="400"> |
-| **浏览器免部署节点 (Web Node)** | |
-| <img src="imgs/浏览器节点.png" width="400"> | |
+| **浏览器免部署节点 (Web Node)** | **历史丢包趋势** |
+| <img src="imgs/浏览器节点.png" width="400"> | <img src="imgs/丢包.png" width="400"> |
 
 ---
 
