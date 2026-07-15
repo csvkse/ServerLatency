@@ -79,7 +79,7 @@ chmod +x ServerLatency
 ```json
 {
   "Mode": "Client",                          // 运行模式: "Client" 或 "Server"
-  "AccessKey": "H1_Latency_Secret_Key_2026", // 认证密钥 (空则不鉴权)
+  "AccessKey": "MySecretKey",                // 认证密钥 (空则不鉴权)
   "ClientConfig": {
     "ServerUrl": "http://localhost:15002",   // [Client] 控制端地址
     "ClientName": ""                         // [Client] 节点名称 (留空自动用机器名)
@@ -123,7 +123,7 @@ chmod +x ServerLatency
 ### 位置参数（最快写法）
 
 ```bash
-./ServerLatency "http://server:15002" "MySecretKey" "Worker-01"
+./ServerLatency "http://your-server-ip:15002" "MySecretKey" "Worker-01"
 # 格式: [ServerUrl] [AccessKey] [ClientName]，默认走 Client 模式
 ```
 
@@ -150,13 +150,13 @@ chmod +x ServerLatency
 
 ```bash
 # 命令行参数
-./ServerLatency -m Client -u "https://monitor.example.com" -k "MySecretKey" -n "Worker-01"
+./ServerLatency -m Client -u "http://your-server-ip:15002" -k "MySecretKey" -n "Worker-01"
 
 # 指定替代 IP（NAT 后 / 指定公网 IP 场景；会覆盖被探测目标 IP）
-./ServerLatency -m Client -u "https://monitor.example.com" -k "MySecretKey" -n "Worker-01" -ip "1.2.3.4"
+./ServerLatency -m Client -u "http://your-server-ip:15002" -k "MySecretKey" -n "Worker-01" -ip "1.2.3.4"
 
 # 位置参数
-./ServerLatency "https://monitor.example.com" "MySecretKey" "Worker-01"
+./ServerLatency "http://your-server-ip:15002" "MySecretKey" "Worker-01"
 ```
 
 行为细节：
@@ -165,11 +165,11 @@ chmod +x ServerLatency
 
 ### 3. 浏览器节点模式 (Web Node)
 
-无需部署二进制。访问 `http://your-server:15002/node.html`，填节点名与密钥即可成为探测节点。
+无须部署二进制。访问 `http://your-server-ip:15002/node.html`，填节点名与密钥即可成为探测节点。
 
 ```bash
 # 浏览器打开
-http://your-server:15002/node.html
+http://your-server-ip:15002/node.html
 ```
 
 行为细节：
@@ -234,7 +234,7 @@ http://your-server:15002/node.html
 sudo ./ServerLatency-linux-x64 -m Server -p 15002 -k "MySecretKey" --install
 
 # 安装客户端 (同一可执行文件，服务名仍为 serverlatency)
-sudo ./ServerLatency-linux-x64 -m Client -u "http://your-server:15002" -k "MySecretKey" -n "Worker-01" --install
+sudo ./ServerLatency-linux-x64 -m Client -u "http://your-server-ip:15002" -k "MySecretKey" -n "Worker-01" --install
 ```
 
 生成的 unit 文件（`/etc/systemd/system/serverlatency.service`）关键配置：
@@ -361,8 +361,8 @@ docker rm temp-build-container
 
 ```bash
 # 启动服务端
-wget https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz && tar -xzf ServerLatency-linux-x64.tar.gz && chmod +x ServerLatency && ./ServerLatency -m Server -p 35002 -k "MySecretKey"
+wget https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz && tar -xzf ServerLatency-linux-x64.tar.gz && chmod +x ServerLatency && ./ServerLatency -m Server -p 15002 -k "MySecretKey"
 
 # 启动客户端
-wget https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz && tar -xzf ServerLatency-linux-x64.tar.gz && chmod +x ServerLatency && ./ServerLatency -m Client --Key "MySecretKey" --ServerUrl "http://your-server-ip:35002" --Name "Worker-01"
+wget https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz && tar -xzf ServerLatency-linux-x64.tar.gz && chmod +x ServerLatency && ./ServerLatency -m Client --Key "MySecretKey" --ServerUrl "http://your-server-ip:15002" --Name "Worker-01"
 ```
