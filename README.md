@@ -58,17 +58,17 @@
 **安装服务端：**
 
 ```bash
-wget -qO- https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz \
-  | tar -xz && chmod +x ServerLatency && \
-  sudo ./ServerLatency -m Server -p 15002 -k "MySecretKey" --install
+URL="https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz"; \
+(curl -fsSL $URL || wget -qO- $URL) | tar -xz && chmod +x ServerLatency && \
+sudo ./ServerLatency -m Server -p 15002 -k "MySecretKey" --install
 ```
 
 **安装客户端探测节点：**
 
 ```bash
-wget -qO- https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz \
-  | tar -xz && chmod +x ServerLatency && \
-  sudo ./ServerLatency -m Client -u "http://your-server-ip:15002" -k "MySecretKey" -n "Worker-01" --install
+URL="https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz"; \
+(curl -fsSL $URL || wget -qO- $URL) | tar -xz && chmod +x ServerLatency && \
+sudo ./ServerLatency -m Client -u "http://your-server-ip:15002" -k "MySecretKey" -n "Worker-01" --install
 ```
 
 > 安装完成后服务立即启动，查看状态：`sudo systemctl status serverlatency`  
@@ -80,8 +80,8 @@ wget -qO- https://github.com/csvkse/ServerLatency/releases/latest/download/Serve
 
 ```bash
 # 下载 Linux 单文件
-wget https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz
-tar -xzf ServerLatency-linux-x64.tar.gz
+URL="https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz"
+(curl -fsSL $URL || wget -qO- $URL) | tar -xz
 chmod +x ServerLatency
 
 # 启动服务端 (控制面 + 大屏)
@@ -396,8 +396,8 @@ docker rm temp-build-container
 
 ```bash
 # 启动服务端
-wget https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz && tar -xzf ServerLatency-linux-x64.tar.gz && chmod +x ServerLatency && ./ServerLatency -m Server -p 15002 -k "MySecretKey"
+URL="https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz"; (curl -fsSL $URL || wget -qO- $URL) | tar -xz && chmod +x ServerLatency && ./ServerLatency -m Server -p 15002 -k "MySecretKey"
 
 # 启动客户端
-wget https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz && tar -xzf ServerLatency-linux-x64.tar.gz && chmod +x ServerLatency && ./ServerLatency -m Client --Key "MySecretKey" --ServerUrl "http://your-server-ip:15002" --Name "Worker-01"
+URL="https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz"; (curl -fsSL $URL || wget -qO- $URL) | tar -xz && chmod +x ServerLatency && ./ServerLatency -m Client --Key "MySecretKey" --ServerUrl "http://your-server-ip:15002" --Name "Worker-01"
 ```
