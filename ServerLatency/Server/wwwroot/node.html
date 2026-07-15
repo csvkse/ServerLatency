@@ -174,8 +174,8 @@
                         <input v-model="nodeName" :disabled="isConnected" class="cyber-input w-full rounded-lg px-3 py-2 text-sm font-mono">
                     </div>
                     <div>
-                        <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ REPORT_IP <span class="text-cyber-dim">(Optional)</span></label>
-                        <input v-model="nodeIp" :disabled="isConnected" placeholder="Auto-detected" class="cyber-input w-full rounded-lg px-3 py-2 text-sm font-mono">
+                        <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ NODE_IP <span class="text-cyber-dim">(Override)</span></label>
+                        <input v-model="nodeIp" :disabled="isConnected" placeholder="Auto-detected IP" class="cyber-input w-full rounded-lg px-3 py-2 text-sm font-mono">
                     </div>
                     <div>
                         <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ ACCESS_KEY</label>
@@ -213,7 +213,7 @@
                 
                 const isConnected = ref(false);
                 const nodeName = ref(urlParams.get('name') || 'WebNode-' + Math.floor(Math.random() * 99));
-                const nodeIp = ref(urlParams.get('reportip') || urlParams.get('ip') || '');
+                const nodeIp = ref(urlParams.get('ip') || urlParams.get('clientip') || '');
                 const accessKey = ref(urlParams.get('key') || localStorage.getItem('SL_KEY') || '');
                 const logs = ref([]);
                 const logBox = ref(null);
