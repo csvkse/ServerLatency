@@ -364,5 +364,5 @@ docker rm temp-build-container
 wget https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz && tar -xzf ServerLatency-linux-x64.tar.gz && chmod +x ServerLatency && ./ServerLatency -m Server -p 35002 -k "MySecretKey"
 
 # 启动客户端
-wget https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz && tar -xzf ServerLatency-linux-x64.tar.gz && chmod +x ServerLatency && ./ServerLatency -m Client --Key "MySecretKey" --ServerUrl "http://your-server-ip:15002" --Name "Worker-01"
+wget https://github.com/csvkse/ServerLatency/releases/latest/download/ServerLatency-linux-x64.tar.gz && tar -xzf ServerLatency-linux-x64.tar.gz && chmod +x ServerLatency && ./ServerLatency -m Client --Key "MySecretKey" --ServerUrl "http://your-server-ip:35002" --Name "Worker-01"
 ```
