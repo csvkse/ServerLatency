@@ -3,16 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Edge Node - Server Latency</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="icon" href="/favicon.png" type="image/png">
-
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
     <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Tailwind Play CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -40,162 +36,157 @@
             }
         }
     </script>
-
-    <!-- Vue 3 & SignalR -->
+    <script src="/i18n.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 
     <style>
-        /* ========== Base ========== */
-        * { scrollbar-width: thin; scrollbar-color: #1a1a2e #0a0a0f; }
+        * { scrollbar-width: thin; scrollbar-color: #1a1a2e #0a0a0f; box-sizing: border-box; }
         body { font-family: Inter, -apple-system, sans-serif; }
-
-        /* ========== Scrollbar (WebKit) ========== */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #0a0a0f; }
         ::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #2a2a4e; }
 
-        /* ========== Neon Border ========== */
         .neon-border {
             border: 1px solid #1e1e3a;
             transition: border-color .3s, box-shadow .3s;
         }
-        .neon-border:hover,
-        .neon-border:focus-within {
+        .neon-border:hover, .neon-border:focus-within {
             border-color: rgba(0,240,255,.4);
             box-shadow: 0 0 8px rgba(0,240,255,.12);
         }
 
-        /* ========== Form ========== */
         .cyber-input {
-            background: #1a1a2e;
-            border: 1px solid #1e1e3a;
-            color: #e8e8f0;
+            background: #1a1a2e; border: 1px solid #1e1e3a; color: #e8e8f0;
             transition: border-color .3s, box-shadow .3s;
         }
-        .cyber-input:focus {
-            outline: none;
-            border-color: #00f0ff;
-            box-shadow: 0 0 8px rgba(0,240,255,.25);
-        }
+        .cyber-input:focus { outline: none; border-color: #00f0ff; box-shadow: 0 0 8px rgba(0,240,255,.25); }
         .cyber-input::placeholder { color: #555577; }
         .cyber-input:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* ========== Button ========== */
         .btn-neon-primary {
-            background: rgba(0,240,255,.15);
-            border: 1px solid #00f0ff;
-            color: #00f0ff;
-            transition: all .2s;
+            background: rgba(0,240,255,.15); border: 1px solid #00f0ff; color: #00f0ff; transition: all .2s;
         }
-        .btn-neon-primary:hover {
-            background: rgba(0,240,255,.25);
-            box-shadow: 0 0 16px rgba(0,240,255,.35);
-        }
-        
+        .btn-neon-primary:hover { background: rgba(0,240,255,.25); box-shadow: 0 0 16px rgba(0,240,255,.35); }
+
         .btn-neon-red {
-            background: rgba(255,51,85,.15);
-            border: 1px solid #ff3355;
-            color: #ff3355;
-            transition: all .2s;
+            background: rgba(255,51,85,.15); border: 1px solid #ff3355; color: #ff3355; transition: all .2s;
         }
-        .btn-neon-red:hover {
-            background: rgba(255,51,85,.25);
-            box-shadow: 0 0 16px rgba(255,51,85,.35);
-        }
+        .btn-neon-red:hover { background: rgba(255,51,85,.25); box-shadow: 0 0 16px rgba(255,51,85,.35); }
 
-        /* ========== Code / Logs ========== */
         .code-block {
-            background: #0d0d16;
-            border: 1px solid #1a1a2e;
-            border-radius: 8px;
+            background: #0d0d16; border: 1px solid #1a1a2e; border-radius: 8px;
             font-family: 'JetBrains Mono', Monaco, monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+            font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word;
         }
 
-        /* ========== Status Dot ========== */
-        .status-dot {
-            display: inline-block;
-            width: 8px; height: 8px;
-            border-radius: 50%;
-        }
-        .status-dot.online {
-            background: #00ff88;
-            animation: pulse 2s infinite;
-        }
-        .status-dot.offline {
-            background: #555577;
-        }
+        .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+        .status-dot.online  { background: #00ff88; animation: pulse 2s infinite; }
+        .status-dot.offline { background: #555577; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
 
-        /* ========== Grid Background ========== */
         .bg-grid {
             background-image:
                 linear-gradient(rgba(0,240,255,.02) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0,240,255,.02) 1px, transparent 1px);
             background-size: 40px 40px;
         }
+
+        .lang-btn {
+            padding: 3px 9px; border: 1px solid #1e1e3a; border-radius: 4px;
+            color: #8888aa; font-size: 11px; cursor: pointer; transition: all .2s;
+            background: transparent; font-family: 'JetBrains Mono', monospace;
+            min-height: 28px;
+        }
+        .lang-btn:hover { border-color: #00f0ff; color: #00f0ff; }
+
+        /* ========== Mobile Bottom Navigation ========== */
+        .mobile-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(18,18,30,.97); backdrop-filter: blur(16px);
+            border-top: 1px solid #1e1e3a;
+            display: flex; z-index: 200;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .mobile-nav a {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 8px 4px; gap: 3px;
+            color: #555577; text-decoration: none; transition: color .2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mobile-nav a.active { color: #00f0ff; }
+        .mobile-nav span { font-size: 9px; font-family: 'JetBrains Mono', monospace; letter-spacing: .05em; }
+        @media (min-width: 640px) { .mobile-nav { display: none; } }
     </style>
 </head>
 
-<body class="min-h-screen bg-cyber-bg text-cyber-text bg-grid flex items-center justify-center p-4">
-    <div id="app" class="w-full max-w-lg">
-        
+<body class="min-h-screen bg-cyber-bg text-cyber-text bg-grid flex items-start sm:items-center justify-center p-3 sm:p-4 pb-16 sm:pb-4">
+    <div id="app" class="w-full max-w-lg mt-2 sm:mt-0">
+
         <section class="neon-border rounded-xl bg-cyber-surf overflow-hidden shadow-neon-md">
             <!-- Header -->
-            <div class="px-6 py-4 border-b border-[#1e1e3a] flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <img src="/logo.png" alt="Logo" class="h-8 w-8 object-contain drop-shadow-[0_0_8px_rgba(0,240,255,0.6)] rounded-sm">
-                    <h1 class="font-display text-lg tracking-[.15em] text-cyber-cyan">EDGE<span class="text-cyber-text">_NODE</span></h1>
-                    <span class="text-xs text-cyber-muted hidden sm:inline">// 单点拨测控制台</span>
+            <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-[#1e1e3a] flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <img src="/logo.png" alt="Logo" class="h-7 w-7 sm:h-8 sm:w-8 object-contain drop-shadow-[0_0_8px_rgba(0,240,255,0.6)] rounded-sm flex-shrink-0">
+                    <h1 class="font-display text-sm sm:text-lg tracking-[.12em] sm:tracking-[.15em] text-cyber-cyan whitespace-nowrap">EDGE<span class="text-cyber-text">_NODE</span></h1>
+                    <span class="text-[10px] text-cyber-muted hidden md:inline">{{ t('nodeHeaderSubtitle') }}</span>
                 </div>
-                <div class="flex items-center gap-3">
-                    <select onchange="if(this.value) window.location.href = this.value" class="bg-cyber-bg text-cyber-cyan border border-[#1e1e3a] hover:border-cyber-cyan rounded px-2 py-1 outline-none transition-colors cursor-pointer text-[10px] font-mono">
-                        <option value="" disabled selected>[ PAGE_JUMP ]</option>
-                        <option value="/index.html">LATENCY_MATRIX</option>
-                        <option value="/node.html">EDGE_NODE</option>
-                        <option value="/data.html">RAW_DATA</option>
-                        <option value="/admin.html">ADMIN_PANEL</option>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <button @click="toggleLang" class="lang-btn">{{ t('langToggle') }}</button>
+                    <!-- Page jump — desktop only -->
+                    <select onchange="if(this.value) window.location.href = this.value"
+                        class="hidden sm:block bg-cyber-bg text-cyber-cyan border border-[#1e1e3a] hover:border-cyber-cyan rounded px-2 py-1 outline-none transition-colors cursor-pointer text-[10px] font-mono">
+                        <option value="" disabled selected>{{ t('pageJump') }}</option>
+                        <option value="/index.html">{{ t('pageLatencyMatrix') }}</option>
+                        <option value="/node.html">{{ t('pageEdgeNode') }}</option>
+                        <option value="/data.html">{{ t('pageRawData') }}</option>
+                        <option value="/admin.html">{{ t('pageAdminPanel') }}</option>
                     </select>
-                    <span class="text-xs text-cyber-muted font-mono" v-if="isConnected">ONLINE</span>
-                    <span class="text-xs text-cyber-dim font-mono" v-else>OFFLINE</span>
+                    <!-- Status indicator -->
+                    <div class="flex items-center gap-1.5">
+                        <span class="status-dot" :class="isConnected ? 'online' : 'offline'"></span>
+                        <span class="text-[10px] font-mono" :class="isConnected ? 'text-cyber-muted' : 'text-cyber-dim'">
+                            {{ isConnected ? t('statusOnline') : t('statusOffline') }}
+                        </span>
+                    </div>
                 </div>
             </div>
 
-            <div class="p-6">
+            <div class="p-4 sm:p-6">
                 <!-- Form -->
-                <div class="space-y-4 mb-6">
+                <div class="space-y-3 sm:space-y-4 mb-5 sm:mb-6">
                     <div>
-                        <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ NODE_NAME</label>
-                        <input v-model="nodeName" :disabled="isConnected" class="cyber-input w-full rounded-lg px-3 py-2 text-sm font-mono">
+                        <label class="text-[11px] sm:text-xs font-mono text-cyber-muted block mb-1.5">{{ t('nodeNameLabel') }}</label>
+                        <input v-model="nodeName" :disabled="isConnected"
+                            class="cyber-input w-full rounded-lg px-3 py-2.5 sm:py-2 text-sm font-mono min-h-[44px] sm:min-h-0">
                     </div>
                     <div>
-                        <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ NODE_IP <span class="text-cyber-dim">(Override)</span></label>
-                        <input v-model="nodeIp" :disabled="isConnected" placeholder="Auto-detected IP" class="cyber-input w-full rounded-lg px-3 py-2 text-sm font-mono">
+                        <label class="text-[11px] sm:text-xs font-mono text-cyber-muted block mb-1.5">
+                            {{ t('nodeIpLabel') }} <span class="text-cyber-dim">{{ t('nodeIpHint') }}</span>
+                        </label>
+                        <input v-model="nodeIp" :disabled="isConnected" :placeholder="t('nodeIpPlaceholder')"
+                            class="cyber-input w-full rounded-lg px-3 py-2.5 sm:py-2 text-sm font-mono min-h-[44px] sm:min-h-0">
                     </div>
                     <div>
-                        <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ ACCESS_KEY</label>
-                        <input v-model="accessKey" type="password" :disabled="isConnected" placeholder="Enter Secret Key" class="cyber-input w-full rounded-lg px-3 py-2 text-sm font-mono">
+                        <label class="text-[11px] sm:text-xs font-mono text-cyber-muted block mb-1.5">{{ t('accessKeyLabel') }}</label>
+                        <input v-model="accessKey" type="password" :disabled="isConnected" :placeholder="t('accessKeyPlaceholder')"
+                            class="cyber-input w-full rounded-lg px-3 py-2.5 sm:py-2 text-sm font-mono min-h-[44px] sm:min-h-0">
                     </div>
                 </div>
 
                 <!-- Action Button -->
-                <button class="w-full py-2.5 rounded-lg text-sm font-display tracking-widest font-bold mb-6"
+                <button class="w-full py-3 rounded-lg text-sm font-display tracking-widest font-bold mb-5 sm:mb-6 min-h-[48px]"
                     :class="isConnected ? 'btn-neon-red' : 'btn-neon-primary'"
                     @click="toggle">
-                    {{ isConnected ? 'DISCONNECT' : 'START_NODE' }}
+                    {{ isConnected ? t('btnDisconnect') : t('btnStartNode') }}
                 </button>
 
                 <!-- Console Logs -->
                 <div>
-                    <label class="text-xs font-mono text-cyber-muted block mb-1.5">// SYSTEM_LOGS</label>
-                    <div class="code-block h-48 overflow-y-auto p-3 text-cyber-green/80 flex flex-col" ref="logBox">
-                        <div v-if="logs.length === 0" class="text-cyber-dim text-xs mt-auto">// Awaiting connection...</div>
-                        <div v-for="(l,i) in logs" :key="i" class="text-xs">
+                    <label class="text-[11px] sm:text-xs font-mono text-cyber-muted block mb-1.5">{{ t('logsLabel') }}</label>
+                    <div class="code-block h-40 sm:h-48 overflow-y-auto p-3 text-cyber-green/80 flex flex-col" ref="logBox">
+                        <div v-if="logs.length === 0" class="text-cyber-dim text-xs mt-auto">{{ t('logsAwaiting') }}</div>
+                        <div v-for="(l,i) in logs" :key="i" class="text-xs leading-relaxed">
                             <span class="text-cyber-dim">[{{l.time}}]</span> {{l.msg}}
                         </div>
                     </div>
@@ -205,65 +196,85 @@
 
     </div>
 
+    <!-- Mobile Bottom Nav -->
+    <nav class="mobile-nav">
+        <a href="/index.html">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            <span>MATRIX</span>
+        </a>
+        <a href="/node.html" class="active">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            <span>NODE</span>
+        </a>
+        <a href="/data.html">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+            <span>DATA</span>
+        </a>
+        <a href="/admin.html">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+                <path d="M12 2v2M12 20v2M2 12H4M20 12h2"/>
+            </svg>
+            <span>ADMIN</span>
+        </a>
+    </nav>
+
     <script>
         const { createApp, ref, nextTick } = Vue;
         createApp({
             setup() {
+                const { t: tComputed, locale, toggleLang } = I18n.useI18n(Vue);
+                const t = (key) => tComputed.value(key);
+
                 const urlParams = new URLSearchParams(window.location.search);
-                
                 const isConnected = ref(false);
                 const nodeName = ref(urlParams.get('name') || 'WebNode-' + Math.floor(Math.random() * 99));
-                const nodeIp = ref(urlParams.get('ip') || urlParams.get('nodeip') || '');
+                const nodeIp   = ref(urlParams.get('ip') || urlParams.get('nodeip') || '');
                 const accessKey = ref(urlParams.get('key') || localStorage.getItem('SL_KEY') || '');
                 const logs = ref([]);
                 const logBox = ref(null);
 
-                let connection = null;
-                let targets = [];
-                let timer = null;
+                let connection = null, targets = [], timer = null;
 
                 const addLog = (msg) => {
                     logs.value.unshift({ time: new Date().toLocaleTimeString(), msg });
                     if (logs.value.length > 50) logs.value.pop();
                 };
 
-                const toggle = async () => {
-                    if (isConnected.value) await stop();
-                    else await start();
-                };
+                const toggle = async () => { if (isConnected.value) await stop(); else await start(); };
 
                 const start = async () => {
                     try {
                         addLog("Connecting to Control Plane via SignalR...");
                         connection = new signalR.HubConnectionBuilder()
-                            .withUrl("/latencyHub")
-                            .withAutomaticReconnect()
-                            .build();
+                            .withUrl("/latencyHub").withAutomaticReconnect().build();
 
                         connection.on("Welcome", msg => {
                             const match = msg.match(/\((.*?)\)/);
                             if (match && match[1]) nodeIp.value = match[1];
                             addLog(msg);
                         });
-
                         connection.on("UpdateTargets", newTargets => {
                             targets = newTargets || [];
                             addLog(`Updated targets: ${targets.length}`);
                             runPing();
                         });
-
-                        connection.onclose(() => {
-                            isConnected.value = false;
-                            addLog("Connection closed.");
-                        });
+                        connection.onclose(() => { isConnected.value = false; addLog("Connection closed."); });
 
                         await connection.start();
                         await connection.invoke("JoinPingNode", nodeName.value, accessKey.value, nodeIp.value);
-                        
                         isConnected.value = true;
                         runPing();
-                        timer = setInterval(runPing, 5000); // Ping every 5s
-
+                        timer = setInterval(runPing, 5000);
                     } catch (e) {
                         addLog(`Connection failed: ${e.message}`);
                         isConnected.value = false;
@@ -272,76 +283,46 @@
 
                 const stop = async () => {
                     if (timer) clearInterval(timer);
-                    if (connection) {
-                        await connection.stop();
-                        connection = null;
-                    }
+                    if (connection) { await connection.stop(); connection = null; }
                     isConnected.value = false;
                     addLog("Stopped.");
                 };
 
-                const probeTarget = async (t) => {
-                    let baseIp = t;
-                    let hasPort = false;
-                    
-                    if (t.includes(':')) {
-                        if (t.indexOf(':') === t.lastIndexOf(':')) {
-                            // IPv4 with port
-                            hasPort = true;
-                        } else {
-                            // IPv6
-                            if (!t.startsWith('[')) baseIp = `[${t}]`;
+                const probeTarget = async (tgt) => {
+                    let baseIp = tgt, hasPort = false;
+                    if (tgt.includes(':')) {
+                        if (tgt.indexOf(':') === tgt.lastIndexOf(':')) { hasPort = true; }
+                        else {
+                            if (!tgt.startsWith('[')) baseIp = `[${tgt}]`;
                             if (baseIp.includes(']:')) hasPort = true;
                         }
                     }
-
-                    const urls = hasPort ? 
-                        [`http://${baseIp}`] : 
-                        [`http://${baseIp}:80`, `https://${baseIp}:443`, `http://${baseIp}:8080`, `http://${baseIp}:15002`];
+                    const urls = hasPort
+                        ? [`http://${baseIp}`]
+                        : [`http://${baseIp}:80`, `https://${baseIp}:443`, `http://${baseIp}:8080`, `http://${baseIp}:15002`];
 
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 2000);
-
                     const doFetch = async (url) => {
                         const start = performance.now();
-                        try {
-                            await fetch(url, { method: 'HEAD', mode: 'no-cors', cache: 'no-cache', signal: controller.signal });
-                            return performance.now() - start;
-                        } catch (err) {
-                            throw err;
-                        }
+                        await fetch(url, { method: 'HEAD', mode: 'no-cors', cache: 'no-cache', signal: controller.signal });
+                        return performance.now() - start;
                     };
-
                     try {
                         const latency = await Promise.any(urls.map(doFetch));
-                        controller.abort(); // Cancel remaining requests
-                        clearTimeout(timeoutId);
+                        controller.abort(); clearTimeout(timeoutId);
                         return latency;
-                    } catch (e) {
-                        clearTimeout(timeoutId);
-                        return -1;
-                    }
+                    } catch (e) { clearTimeout(timeoutId); return -1; }
                 };
 
                 const runPing = async () => {
                     if (!isConnected.value || targets.length === 0) return;
-
                     const reports = [];
-                    // Probe all targets concurrently to avoid blocking
-                    await Promise.all(targets.map(async (t) => {
-                        if (t === nodeIp.value) return;
-
-                        const lat = await probeTarget(t);
-
-                        reports.push({
-                            sourceName: nodeName.value,
-                            sourceIp: nodeIp.value,
-                            targetIp: t,
-                            latencyMs: lat,
-                            isSuccess: lat >= 0
-                        });
+                    await Promise.all(targets.map(async (tgt) => {
+                        if (tgt === nodeIp.value) return;
+                        const lat = await probeTarget(tgt);
+                        reports.push({ sourceName: nodeName.value, sourceIp: nodeIp.value, targetIp: tgt, latencyMs: lat, isSuccess: lat >= 0 });
                     }));
-
                     if (reports.length > 0 && connection && connection.state === signalR.HubConnectionState.Connected) {
                         try {
                             await connection.invoke("Report", reports, accessKey.value);
@@ -350,10 +331,9 @@
                     }
                 };
 
-                return { isConnected, nodeName, nodeIp, accessKey, logs, toggle, logBox };
+                return { isConnected, nodeName, nodeIp, accessKey, logs, toggle, logBox, t, locale, toggleLang };
             }
         }).mount('#app');
     </script>
 </body>
-
 </html>

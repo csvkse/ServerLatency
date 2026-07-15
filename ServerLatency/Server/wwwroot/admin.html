@@ -3,11 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Admin - Server Latency</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="icon" href="/favicon.png" type="image/png">
-
     <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
     <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -37,12 +36,13 @@
             }
         }
     </script>
+    <script src="/i18n.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
     <style>
-        * { scrollbar-width: thin; scrollbar-color: #1a1a2e #0a0a0f; }
+        * { scrollbar-width: thin; scrollbar-color: #1a1a2e #0a0a0f; box-sizing: border-box; }
         body { font-family: Inter, -apple-system, sans-serif; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #0a0a0f; }
         ::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 3px; }
 
@@ -50,16 +50,15 @@
             background: #1a1a2e; border: 1px solid #1e1e3a; color: #e8e8f0;
             transition: border-color .3s, box-shadow .3s;
         }
-        .cyber-input:focus {
-            outline: none; border-color: #00f0ff; box-shadow: 0 0 8px rgba(0,240,255,.25);
-        }
-        
+        .cyber-input:focus { outline: none; border-color: #00f0ff; box-shadow: 0 0 8px rgba(0,240,255,.25); }
+        .cyber-input::placeholder { color: #555577; }
+
         .btn-neon-primary {
             background: rgba(0,240,255,.15); border: 1px solid #00f0ff; color: #00f0ff; transition: all .2s;
         }
-        .btn-neon-primary:hover {
-            background: rgba(0,240,255,.25); box-shadow: 0 0 16px rgba(0,240,255,.35);
-        }
+        .btn-neon-primary:hover { background: rgba(0,240,255,.25); box-shadow: 0 0 16px rgba(0,240,255,.35); }
+
+        .neon-border { border: 1px solid #1e1e3a; transition: border-color .3s, box-shadow .3s; }
 
         .bg-grid {
             background-image: linear-gradient(rgba(0,240,255,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,240,255,.02) 1px, transparent 1px);
@@ -68,172 +67,231 @@
 
         .code-block {
             background: #0d0d16; border: 1px solid #1a1a2e; border-radius: 6px;
-            font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 10px;
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 10px;
             color: #00ff88; word-wrap: break-word; position: relative;
+            line-height: 1.5;
         }
+        @media (min-width: 640px) { .code-block { font-size: 12px; } }
+
         .copy-btn {
             position: absolute; top: 6px; right: 6px; background: #1a1a2e;
-            border: 1px solid #1e1e3a; color: #8888aa; padding: 2px 6px;
+            border: 1px solid #1e1e3a; color: #8888aa; padding: 3px 8px;
             border-radius: 4px; font-size: 10px; cursor: pointer; transition: .2s;
+            min-height: 26px;
         }
         .copy-btn:hover { color: #00f0ff; border-color: #00f0ff; }
+
+        .lang-btn {
+            padding: 3px 9px; border: 1px solid #1e1e3a; border-radius: 4px;
+            color: #8888aa; font-size: 11px; cursor: pointer; transition: all .2s;
+            background: transparent; font-family: 'JetBrains Mono', monospace; min-height: 28px;
+        }
+        .lang-btn:hover { border-color: #00f0ff; color: #00f0ff; }
+
+        /* Auth panel animation */
+        .auth-panel { animation: fadeUp .3s ease; }
+        @keyframes fadeUp {
+            from { transform: translateY(16px); opacity: 0; }
+            to   { transform: translateY(0); opacity: 1; }
+        }
+
+        /* ========== Mobile Bottom Navigation ========== */
+        .mobile-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(18,18,30,.97); backdrop-filter: blur(16px);
+            border-top: 1px solid #1e1e3a;
+            display: flex; z-index: 200;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .mobile-nav a {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 8px 4px; gap: 3px;
+            color: #555577; text-decoration: none; transition: color .2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mobile-nav a.active { color: #00f0ff; }
+        .mobile-nav span { font-size: 9px; font-family: 'JetBrains Mono', monospace; letter-spacing: .05em; }
+        @media (min-width: 640px) { .mobile-nav { display: none; } }
     </style>
 </head>
 
-<body class="min-h-screen bg-cyber-bg text-cyber-text bg-grid">
+<body class="min-h-screen bg-cyber-bg text-cyber-text bg-grid pb-16 sm:pb-0">
     <div id="app">
         <!-- Header -->
-        <header class="border-b border-[#1e1e3a] bg-cyber-surf/80 backdrop-blur sticky top-0 z-50">
-            <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <img src="/logo.png" alt="Logo" class="h-8 w-8 object-contain drop-shadow-[0_0_8px_rgba(0,240,255,0.6)] rounded-sm">
-                    <h1 class="font-display text-lg tracking-[.15em] text-cyber-cyan">ADMIN<span class="text-cyber-text">_PANEL</span></h1>
-                    <span class="text-xs text-cyber-muted hidden sm:inline">// 系统管理中心</span>
+        <header class="border-b border-[#1e1e3a] bg-cyber-surf/90 backdrop-blur sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <img src="/logo.png" alt="Logo" class="h-7 w-7 sm:h-8 sm:w-8 object-contain drop-shadow-[0_0_8px_rgba(0,240,255,0.6)] rounded-sm flex-shrink-0">
+                    <h1 class="font-display text-sm sm:text-lg tracking-[.12em] text-cyber-cyan whitespace-nowrap">ADMIN<span class="text-cyber-text">_PANEL</span></h1>
+                    <span class="text-[10px] text-cyber-muted hidden lg:inline">{{ t('adminHeaderSubtitle') }}</span>
                 </div>
-                <div class="flex items-center gap-4 text-xs font-mono text-cyber-muted">
-                    <select onchange="if(this.value) window.location.href = this.value" class="bg-cyber-bg text-cyber-cyan border border-[#1e1e3a] hover:border-cyber-cyan rounded px-2 py-1 outline-none cursor-pointer">
-                        <option value="" disabled>[ PAGE_JUMP ]</option>
-                        <option value="/index.html">LATENCY_MATRIX</option>
-                        <option value="/node.html">EDGE_NODE</option>
-                        <option value="/data.html">RAW_DATA</option>
-                        <option value="/admin.html" selected>ADMIN_PANEL</option>
+                <div class="flex items-center gap-2 text-xs font-mono text-cyber-muted flex-shrink-0">
+                    <button @click="toggleLang" class="lang-btn">{{ t('langToggle') }}</button>
+                    <!-- Page jump — desktop only -->
+                    <select onchange="if(this.value) window.location.href = this.value"
+                        class="hidden sm:block bg-cyber-bg text-cyber-cyan border border-[#1e1e3a] hover:border-cyber-cyan rounded px-2 py-1 outline-none cursor-pointer text-[10px]">
+                        <option value="" disabled>{{ t('pageJump') }}</option>
+                        <option value="/index.html">{{ t('pageLatencyMatrix') }}</option>
+                        <option value="/node.html">{{ t('pageEdgeNode') }}</option>
+                        <option value="/data.html">{{ t('pageRawData') }}</option>
+                        <option value="/admin.html" selected>{{ t('pageAdminPanel') }}</option>
                     </select>
                 </div>
             </div>
         </header>
 
-        <!-- Auth Modal -->
-        <div v-if="!isAuthenticated" class="min-h-[80vh] flex items-center justify-center p-4">
-            <div class="bg-cyber-surf border border-[#1e1e3a] p-8 rounded-xl shadow-neon-md w-full max-w-sm text-center">
-                <h2 class="font-display text-cyber-cyan mb-6 tracking-widest">AUTHENTICATION</h2>
-                <div class="relative mb-4">
-                    <input v-model="accessKey" type="text" placeholder="Enter Access Key" class="cyber-input w-full rounded p-3 text-center font-mono tracking-widest pr-10" @keyup.enter="login">
-                    <button @click="randomizeLoginKey" class="absolute right-3 top-1/2 -translate-y-1/2 text-cyber-muted hover:text-cyber-cyan transition-colors" title="Random Generate">
+        <!-- Auth Panel -->
+        <div v-if="!isAuthenticated" class="min-h-[80vh] flex items-center justify-center p-3">
+            <div class="auth-panel bg-cyber-surf border border-[#1e1e3a] p-6 sm:p-8 rounded-xl shadow-neon-md w-full max-w-sm text-center">
+                <h2 class="font-display text-cyber-cyan mb-5 tracking-widest text-base sm:text-lg">{{ t('authTitle2') }}</h2>
+                <div class="relative mb-3">
+                    <input v-model="accessKey" type="text" :placeholder="t('authKeyPlaceholder')"
+                        class="cyber-input w-full rounded-lg p-3 text-center font-mono tracking-widest pr-12 text-sm min-h-[48px]"
+                        @keyup.enter="login">
+                    <button @click="randomizeLoginKey"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-cyber-muted hover:text-cyber-cyan transition-colors p-1" title="Random Generate">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.94 4.09"/></svg>
                     </button>
                 </div>
-                <button @click="login" class="btn-neon-primary w-full py-2.5 rounded font-display tracking-widest font-bold">LOGIN</button>
+                <button @click="login"
+                    class="btn-neon-primary w-full py-3 rounded-lg font-display tracking-widest font-bold min-h-[48px]">
+                    {{ t('btnLogin') }}
+                </button>
                 <div v-if="authError" class="text-cyber-red text-xs mt-3 font-mono">{{ authError }}</div>
             </div>
         </div>
 
         <!-- Dashboard -->
-        <div v-else class="max-w-4xl mx-auto px-4 py-8">
-            <div class="flex items-center justify-between mb-8">
-                <h2 class="font-display text-xl text-cyber-cyan">DASHBOARD</h2>
-                <button @click="logout" class="text-xs font-mono text-cyber-red border border-cyber-red/30 px-3 py-1 rounded hover:bg-cyber-red/10">LOGOUT</button>
+        <div v-else class="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+            <div class="flex items-center justify-between mb-6 sm:mb-8">
+                <h2 class="font-display text-base sm:text-xl text-cyber-cyan">{{ t('dashboardTitle') }}</h2>
+                <button @click="logout"
+                    class="text-xs font-mono text-cyber-red border border-cyber-red/30 px-3 py-2 rounded hover:bg-cyber-red/10 min-h-[36px]">
+                    {{ t('btnLogoutAdmin') }}
+                </button>
             </div>
 
-            <!-- Installation Guide Section -->
-            <div class="mb-10 bg-cyber-surf border border-[#1e1e3a] rounded-xl overflow-hidden shadow-neon-md">
-                <div class="px-6 py-4 border-b border-[#1e1e3a] bg-[#16162a]">
-                    <h3 class="font-display text-lg text-cyber-cyan tracking-wider">INSTALLATION_GUIDE</h3>
-                    <p class="text-xs text-cyber-muted font-mono mt-1">// Generate one-click install commands for new nodes or servers</p>
+            <!-- Installation Guide -->
+            <div class="mb-8 sm:mb-10 bg-cyber-surf border border-[#1e1e3a] rounded-xl overflow-hidden shadow-neon-md">
+                <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-[#1e1e3a] bg-[#16162a]">
+                    <h3 class="font-display text-base sm:text-lg text-cyber-cyan tracking-wider">{{ t('installGuideTitle') }}</h3>
+                    <p class="text-[10px] sm:text-xs text-cyber-muted font-mono mt-1">{{ t('installGuideDesc') }}</p>
                 </div>
-                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-4">
+                <div class="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                    <!-- Form fields -->
+                    <div class="space-y-3 sm:space-y-4">
                         <div>
-                            <label class="text-xs font-mono text-cyber-muted block mb-1.5" title="Choose the operation mode for this node">$ MODE</label>
-                            <select v-model="installForm.mode" class="cyber-input w-full rounded p-2 text-sm font-mono">
-                                <option value="Client">Client (Edge Node)</option>
-                                <option value="Server">Server (Control Plane)</option>
+                            <label class="text-[11px] font-mono text-cyber-muted block mb-1.5">{{ t('modeLabel') }}</label>
+                            <select v-model="installForm.mode" class="cyber-input w-full rounded-lg p-2.5 sm:p-2 text-sm font-mono min-h-[40px]">
+                                <option value="Client">{{ t('modeClient') }}</option>
+                                <option value="Server">{{ t('modeServer') }}</option>
                             </select>
-                            <p class="text-[10px] text-cyber-dim mt-1">Edge Node reports latency; Control Plane aggregates it</p>
+                            <p class="text-[10px] text-cyber-dim mt-1">{{ t('modeHint') }}</p>
                         </div>
                         <div>
-                            <label class="text-xs font-mono text-cyber-muted block mb-1.5" title="The display name of the node in the latency matrix">$ NODE_NAME</label>
-                            <input v-model="installForm.nodeName" placeholder="e.g. Node-Tokyo-1" class="cyber-input w-full rounded p-2 text-sm font-mono">
-                            <p class="text-[10px] text-cyber-dim mt-1">Identifier for the node in the matrix</p>
+                            <label class="text-[11px] font-mono text-cyber-muted block mb-1.5">{{ t('nodeNameAdminLabel') }}</label>
+                            <input v-model="installForm.nodeName" placeholder="e.g. Node-Tokyo-1"
+                                class="cyber-input w-full rounded-lg p-2.5 sm:p-2 text-sm font-mono min-h-[40px]">
+                            <p class="text-[10px] text-cyber-dim mt-1">{{ t('nodeNameHint') }}</p>
                         </div>
                         <template v-if="installForm.mode === 'Client'">
                             <div>
-                                <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ SERVER_URL</label>
-                                <input v-model="installForm.serverUrl" placeholder="http://1.2.3.4:15002" class="cyber-input w-full rounded p-2 text-sm font-mono">
-                                <p class="text-[10px] text-cyber-dim mt-1">Control Plane API address</p>
+                                <label class="text-[11px] font-mono text-cyber-muted block mb-1.5">{{ t('serverUrlLabel') }}</label>
+                                <input v-model="installForm.serverUrl" placeholder="http://1.2.3.4:15002"
+                                    class="cyber-input w-full rounded-lg p-2.5 sm:p-2 text-sm font-mono min-h-[40px]">
+                                <p class="text-[10px] text-cyber-dim mt-1">{{ t('serverUrlHint') }}</p>
                             </div>
                             <div>
-                                <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ NODE_IP <span class="text-cyber-dim">(Override)</span></label>
-                                <input v-model="installForm.nodeIp" placeholder="e.g. 192.168.1.100" class="cyber-input w-full rounded p-2 text-sm font-mono">
-                                <p class="text-[10px] text-cyber-dim mt-1">Override the IP address reported to peers</p>
+                                <label class="text-[11px] font-mono text-cyber-muted block mb-1.5">{{ t('nodeIpOverrideLabel') }}</label>
+                                <input v-model="installForm.nodeIp" placeholder="e.g. 192.168.1.100"
+                                    class="cyber-input w-full rounded-lg p-2.5 sm:p-2 text-sm font-mono min-h-[40px]">
+                                <p class="text-[10px] text-cyber-dim mt-1">{{ t('nodeIpOverrideHint') }}</p>
                             </div>
                         </template>
                         <template v-if="installForm.mode === 'Server'">
                             <div>
-                                <label class="text-xs font-mono text-cyber-muted block mb-1.5" title="The local port the Control Plane API will bind to">$ BIND_PORT</label>
-                                <input v-model="installForm.port" type="number" placeholder="15002" class="cyber-input w-full rounded p-2 text-sm font-mono">
-                                <p class="text-[10px] text-cyber-dim mt-1">TCP port to listen for incoming Client requests</p>
+                                <label class="text-[11px] font-mono text-cyber-muted block mb-1.5">{{ t('bindPortLabel') }}</label>
+                                <input v-model="installForm.port" type="number" placeholder="15002"
+                                    class="cyber-input w-full rounded-lg p-2.5 sm:p-2 text-sm font-mono min-h-[40px]">
+                                <p class="text-[10px] text-cyber-dim mt-1">{{ t('bindPortHint') }}</p>
                             </div>
                             <div>
-                                <label class="text-xs font-mono text-cyber-muted block mb-1.5" title="Optional: Custom API to fetch Server's public IP">$ PUBLIC_IP_API <span class="text-cyber-dim">(Optional)</span></label>
-                                <input v-model="installForm.publicIpApi" placeholder="e.g. https://api.ipify.org" class="cyber-input w-full rounded p-2 text-sm font-mono">
-                                <p class="text-[10px] text-cyber-dim mt-1">Custom API endpoint to fetch server's public IP</p>
+                                <label class="text-[11px] font-mono text-cyber-muted block mb-1.5">{{ t('publicIpApiLabel') }}</label>
+                                <input v-model="installForm.publicIpApi" placeholder="e.g. https://api.ipify.org"
+                                    class="cyber-input w-full rounded-lg p-2.5 sm:p-2 text-sm font-mono min-h-[40px]">
+                                <p class="text-[10px] text-cyber-dim mt-1">{{ t('publicIpApiHint') }}</p>
                             </div>
                         </template>
                         <div>
-                            <label class="text-xs font-mono text-cyber-muted block mb-1.5">$ ACCESS_KEY</label>
+                            <label class="text-[11px] font-mono text-cyber-muted block mb-1.5">{{ t('accessKeyAdminLabel') }}</label>
                             <div class="flex gap-2">
-                                <input v-model="installForm.accessKey" type="text" placeholder="Secret Key" class="cyber-input flex-1 rounded p-2 text-sm font-mono">
-                                <button @click="randomizeInstallKey" class="neon-border bg-[#1a1a2e] px-3 rounded text-cyber-cyan hover:bg-cyber-cyan/10 transition-colors" title="Random Generate">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.94 4.09"/></svg>
+                                <input v-model="installForm.accessKey" type="text" placeholder="Secret Key"
+                                    class="cyber-input flex-1 rounded-lg p-2.5 sm:p-2 text-sm font-mono min-h-[40px]">
+                                <button @click="randomizeInstallKey"
+                                    class="neon-border bg-[#1a1a2e] px-3 rounded-lg text-cyber-cyan hover:bg-cyber-cyan/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                                    title="Random Generate">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.94 4.09"/></svg>
                                 </button>
                             </div>
-                            <p class="text-[10px] text-cyber-dim mt-1">Must match the Control Plane configuration</p>
+                            <p class="text-[10px] text-cyber-dim mt-1">{{ t('accessKeyAdminHint') }}</p>
                         </div>
                     </div>
+
+                    <!-- Generated command -->
                     <div class="flex flex-col">
-                        <label class="text-xs font-mono text-cyber-muted block mb-1.5">// GENERATED_COMMAND</label>
-                        <div class="code-block flex-1 h-full min-h-[150px] whitespace-pre-wrap flex flex-col justify-between">
-                            <button class="copy-btn" @click="copy(generatedCommand)">COPY</button>
-                            <span class="text-cyber-green">{{ generatedCommand }}</span>
-                            <div class="text-[10px] text-cyber-dim mt-4">* Assumes ServerLatency binary is in current directory. Run with root privileges.</div>
+                        <label class="text-[11px] font-mono text-cyber-muted block mb-1.5">{{ t('generatedCmdLabel') }}</label>
+                        <div class="code-block flex-1 min-h-[120px] sm:min-h-[150px] whitespace-pre-wrap flex flex-col justify-between">
+                            <button class="copy-btn" @click="copy(generatedCommand)">{{ t('btnCopy') }}</button>
+                            <span class="text-cyber-green pr-12">{{ generatedCommand }}</span>
+                            <div class="text-[10px] text-cyber-dim mt-3">{{ t('cmdNote') }}</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="mb-4">
-                <h3 class="font-display text-lg text-cyber-cyan tracking-wider">NODE_MANAGEMENT</h3>
+            <!-- Node Management -->
+            <div class="mb-3 sm:mb-4">
+                <h3 class="font-display text-base sm:text-lg text-cyber-cyan tracking-wider">{{ t('nodeMgmtTitle') }}</h3>
             </div>
 
-            <div v-if="nodes.length === 0" class="text-center text-cyber-dim font-mono py-12 border border-dashed border-[#1e1e3a] rounded-xl">
-                // NO_ONLINE_NODES_FOUND
+            <div v-if="nodes.length === 0"
+                class="text-center text-cyber-dim font-mono py-10 sm:py-12 border border-dashed border-[#1e1e3a] rounded-xl text-sm">
+                {{ t('noNodesFound') }}
             </div>
 
-            <div class="space-y-6">
-                <div v-for="node in nodes" :key="node.ip" class="bg-cyber-surf border border-[#1e1e3a] rounded-xl overflow-hidden hover:border-cyber-cyan/50 transition-colors">
-                    <div class="px-5 py-3 border-b border-[#1e1e3a] flex items-center justify-between bg-[#16162a]">
-                        <div class="flex items-center gap-3">
-                            <span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span>
-                            <span class="font-display tracking-wider text-cyber-text">{{ node.name }}</span>
-                            <span class="text-xs font-mono text-cyber-cyan bg-cyber-cyan/10 px-2 py-0.5 rounded">{{ node.ip }}</span>
+            <div class="space-y-4 sm:space-y-6">
+                <div v-for="node in nodes" :key="node.ip"
+                    class="bg-cyber-surf border border-[#1e1e3a] rounded-xl overflow-hidden hover:border-cyber-cyan/50 transition-colors">
+                    <div class="px-4 sm:px-5 py-3 border-b border-[#1e1e3a] flex items-center justify-between bg-[#16162a] gap-2">
+                        <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                            <span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse flex-shrink-0"></span>
+                            <span class="font-display tracking-wider text-cyber-text text-sm sm:text-base truncate">{{ node.name }}</span>
+                            <span class="text-[10px] sm:text-xs font-mono text-cyber-cyan bg-cyber-cyan/10 px-2 py-0.5 rounded flex-shrink-0">{{ node.ip }}</span>
                         </div>
-                        <span class="text-xs text-cyber-dim font-mono">Last Seen: {{ formatTime(node.lastSeen) }}</span>
+                        <span class="text-[10px] text-cyber-dim font-mono flex-shrink-0 hidden sm:inline">{{ t('lastSeen') }} {{ formatTime(node.lastSeen) }}</span>
                     </div>
-                    
-                    <div class="p-5 space-y-4">
-                        <!-- Status Command -->
+                    <!-- Mobile: show last seen below header -->
+                    <div class="sm:hidden px-4 pt-2 text-[10px] text-cyber-dim font-mono">{{ t('lastSeen') }} {{ formatTime(node.lastSeen) }}</div>
+
+                    <div class="p-4 sm:p-5 space-y-3 sm:space-y-4">
                         <div>
-                            <div class="text-xs text-cyber-muted font-mono mb-1">// CHECK_STATUS</div>
+                            <div class="text-[10px] sm:text-xs text-cyber-muted font-mono mb-1.5">{{ t('checkStatusLabel') }}</div>
                             <div class="code-block">
-                                <button class="copy-btn" @click="copy(cmdStatus)">COPY</button>
+                                <button class="copy-btn" @click="copy(cmdStatus)">{{ t('btnCopy') }}</button>
                                 {{ cmdStatus }}
                             </div>
                         </div>
-
-                        <!-- Update Config Command -->
                         <div>
-                            <div class="text-xs text-cyber-muted font-mono mb-1">// UPDATE_CONFIG & RESTART</div>
+                            <div class="text-[10px] sm:text-xs text-cyber-muted font-mono mb-1.5">{{ t('updateConfigLabel') }}</div>
                             <div class="code-block text-cyber-yellow">
-                                <button class="copy-btn" @click="copy(cmdRestart)">COPY</button>
+                                <button class="copy-btn" @click="copy(cmdRestart)">{{ t('btnCopy') }}</button>
                                 {{ cmdRestart }}
                             </div>
                         </div>
-
-                        <!-- Uninstall Command -->
                         <div>
-                            <div class="text-xs text-cyber-muted font-mono mb-1">// UNINSTALL_SERVICE</div>
+                            <div class="text-[10px] sm:text-xs text-cyber-muted font-mono mb-1.5">{{ t('uninstallLabel') }}</div>
                             <div class="code-block text-cyber-red">
-                                <button class="copy-btn" @click="copy(cmdUninstall)">COPY</button>
+                                <button class="copy-btn" @click="copy(cmdUninstall)">{{ t('btnCopy') }}</button>
                                 {{ cmdUninstall }}
                             </div>
                         </div>
@@ -243,25 +301,55 @@
         </div>
     </div>
 
+    <!-- Mobile Bottom Nav -->
+    <nav class="mobile-nav">
+        <a href="/index.html">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            <span>MATRIX</span>
+        </a>
+        <a href="/node.html">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            <span>NODE</span>
+        </a>
+        <a href="/data.html">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+            <span>DATA</span>
+        </a>
+        <a href="/admin.html" class="active">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+                <path d="M12 2v2M12 20v2M2 12H4M20 12h2"/>
+            </svg>
+            <span>ADMIN</span>
+        </a>
+    </nav>
+
     <script>
         const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
 
         createApp({
             setup() {
+                const { t: tComputed, locale, toggleLang } = I18n.useI18n(Vue);
+                const t = (key) => tComputed.value(key);
+
                 const generateRandomKey = () => {
                     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
                     let key = '';
-                    for (let i = 0; i < 16; i++) {
-                        key += chars.charAt(Math.floor(Math.random() * chars.length));
-                    }
+                    for (let i = 0; i < 16; i++) key += chars.charAt(Math.floor(Math.random() * chars.length));
                     return key;
                 };
 
                 let initialKey = localStorage.getItem('SL_KEY');
-                if (!initialKey) {
-                    initialKey = generateRandomKey();
-                    localStorage.setItem('SL_KEY', initialKey);
-                }
+                if (!initialKey) { initialKey = generateRandomKey(); localStorage.setItem('SL_KEY', initialKey); }
 
                 const isAuthenticated = ref(false);
                 const accessKey = ref(initialKey);
@@ -273,18 +361,13 @@
                     accessKey.value = generateRandomKey();
                     localStorage.setItem('SL_KEY', accessKey.value);
                 };
-
-                const randomizeInstallKey = () => {
-                    installForm.value.accessKey = generateRandomKey();
-                };
+                const randomizeInstallKey = () => { installForm.value.accessKey = generateRandomKey(); };
 
                 const installForm = ref({
                     mode: 'Client',
                     nodeName: 'Node-' + Math.floor(Math.random()*1000),
                     serverUrl: window.location.origin,
-                    nodeIp: '',
-                    publicIpApi: '',
-                    port: 15002,
+                    nodeIp: '', publicIpApi: '', port: 15002,
                     accessKey: initialKey
                 });
 
@@ -299,12 +382,11 @@
                         if (installForm.value.publicIpApi) cmd += ` --Api "${installForm.value.publicIpApi}"`;
                     }
                     if (installForm.value.accessKey) cmd += ` --Key "${installForm.value.accessKey}"`;
-                    cmd += ` --install`;
-                    return cmd;
+                    return cmd + ' --install';
                 });
 
-                const cmdStatus = "sudo systemctl status serverlatency";
-                const cmdRestart = "sudo nano /etc/systemd/system/serverlatency.service\nsudo systemctl daemon-reload\nsudo systemctl restart serverlatency";
+                const cmdStatus   = "sudo systemctl status serverlatency";
+                const cmdRestart  = "sudo nano /etc/systemd/system/serverlatency.service\nsudo systemctl daemon-reload\nsudo systemctl restart serverlatency";
                 const cmdUninstall = "sudo systemctl stop serverlatency && sudo systemctl disable serverlatency && sudo rm /etc/systemd/system/serverlatency.service && sudo systemctl daemon-reload";
 
                 const login = async () => {
@@ -315,12 +397,8 @@
                             isAuthenticated.value = true;
                             localStorage.setItem('SL_KEY', accessKey.value);
                             startPolling();
-                        } else {
-                            authError.value = "ACCESS_DENIED";
-                        }
-                    } catch (e) {
-                        authError.value = "CONNECTION_ERROR";
-                    }
+                        } else { authError.value = t('errAccessDenied'); }
+                    } catch (e) { authError.value = t('errConnectionError'); }
                 };
 
                 const logout = () => {
@@ -330,10 +408,7 @@
                     if (pollTimer) clearInterval(pollTimer);
                 };
 
-                const startPolling = () => {
-                    fetchData();
-                    pollTimer = setInterval(fetchData, 5000);
-                };
+                const startPolling = () => { fetchData(); pollTimer = setInterval(fetchData, 5000); };
 
                 const fetchData = async () => {
                     try {
@@ -341,33 +416,22 @@
                         if (res.status === 401) { logout(); return; }
                         const data = await res.json();
                         nodes.value = data.onlineNodes || [];
-                    } catch (e) { }
+                    } catch (e) {}
                 };
 
-                const copy = (text) => {
-                    navigator.clipboard.writeText(text);
-                };
+                const copy = (text) => navigator.clipboard.writeText(text);
+                const formatTime = (iso) => iso ? new Date(iso).toLocaleTimeString() : '-';
 
-                const formatTime = (iso) => {
-                    if (!iso) return '-';
-                    return new Date(iso).toLocaleTimeString();
-                };
-
-                onMounted(() => {
-                    // Try auto login
-                    login();
-                });
-
-                onUnmounted(() => {
-                    if (pollTimer) clearInterval(pollTimer);
-                });
+                onMounted(() => { login(); });
+                onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
                 return {
                     isAuthenticated, accessKey, authError, nodes,
-                    login, logout, copy, formatTime, 
+                    login, logout, copy, formatTime,
                     randomizeLoginKey, randomizeInstallKey,
                     cmdStatus, cmdRestart, cmdUninstall,
-                    installForm, generatedCommand
+                    installForm, generatedCommand,
+                    t, locale, toggleLang
                 };
             }
         }).mount('#app');

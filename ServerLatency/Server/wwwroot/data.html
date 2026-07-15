@@ -1,18 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="zh-CN" class="dark">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Raw Data - Server Latency</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="icon" href="/favicon.png" type="image/png">
-
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
     <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Tailwind Play CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -40,15 +36,13 @@
             }
         }
     </script>
-    
-    <!-- Vue 3 -->
+    <script src="/i18n.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
     <style>
-        * { scrollbar-width: thin; scrollbar-color: #1a1a2e #0a0a0f; }
+        * { scrollbar-width: thin; scrollbar-color: #1a1a2e #0a0a0f; box-sizing: border-box; }
         body { font-family: Inter, -apple-system, sans-serif; }
-        
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #0a0a0f; }
         ::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #2a2a4e; }
@@ -57,31 +51,20 @@
             background: #1a1a2e; border: 1px solid #1e1e3a; color: #e8e8f0;
             transition: border-color .3s, box-shadow .3s;
         }
-        .cyber-input:focus {
-            outline: none; border-color: #00f0ff; box-shadow: 0 0 8px rgba(0,240,255,.25);
-        }
-        
+        .cyber-input:focus { outline: none; border-color: #00f0ff; box-shadow: 0 0 8px rgba(0,240,255,.25); }
+        .cyber-input::placeholder { color: #555577; }
+
         .btn-neon-primary {
             background: rgba(0,240,255,.15); border: 1px solid #00f0ff; color: #00f0ff; transition: all .2s;
         }
-        .btn-neon-primary:hover {
-            background: rgba(0,240,255,.25); box-shadow: 0 0 16px rgba(0,240,255,.35);
-        }
+        .btn-neon-primary:hover { background: rgba(0,240,255,.25); box-shadow: 0 0 16px rgba(0,240,255,.35); }
 
-        .neon-border {
-            border: 1px solid #1e1e3a;
-            transition: border-color .3s, box-shadow .3s;
-        }
+        .neon-border { border: 1px solid #1e1e3a; transition: border-color .3s, box-shadow .3s; }
 
         .code-block {
-            background: #0d0d16;
-            border: 1px solid #1a1a2e;
-            border-radius: 8px;
+            background: #0d0d16; border: 1px solid #1a1a2e; border-radius: 8px;
             font-family: 'JetBrains Mono', Monaco, monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+            font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word;
         }
 
         .bg-grid {
@@ -90,56 +73,136 @@
                 linear-gradient(90deg, rgba(0,240,255,.02) 1px, transparent 1px);
             background-size: 40px 40px;
         }
+
+        .lang-btn {
+            padding: 3px 9px; border: 1px solid #1e1e3a; border-radius: 4px;
+            color: #8888aa; font-size: 11px; cursor: pointer; transition: all .2s;
+            background: transparent; font-family: 'JetBrains Mono', monospace; min-height: 28px;
+        }
+        .lang-btn:hover { border-color: #00f0ff; color: #00f0ff; }
+
+        /* Auth panel slide-up animation */
+        .auth-panel { animation: fadeUp .3s ease; }
+        @keyframes fadeUp {
+            from { transform: translateY(16px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        /* ========== Mobile Bottom Navigation ========== */
+        .mobile-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(18,18,30,.97); backdrop-filter: blur(16px);
+            border-top: 1px solid #1e1e3a;
+            display: flex; z-index: 200;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .mobile-nav a {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 8px 4px; gap: 3px;
+            color: #555577; text-decoration: none; transition: color .2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mobile-nav a.active { color: #00f0ff; }
+        .mobile-nav span { font-size: 9px; font-family: 'JetBrains Mono', monospace; letter-spacing: .05em; }
+        @media (min-width: 640px) { .mobile-nav { display: none; } }
     </style>
 </head>
 
-<body class="min-h-screen bg-cyber-bg text-cyber-text bg-grid p-4 md:p-8">
+<body class="min-h-screen bg-cyber-bg text-cyber-text bg-grid p-3 sm:p-4 md:p-8 pb-16 sm:pb-4">
     <div id="app" class="max-w-4xl mx-auto">
-        <!-- Auth Modal -->
-        <div v-if="!isAuthenticated" class="min-h-[80vh] flex items-center justify-center p-4">
-            <div class="bg-cyber-surf border border-[#1e1e3a] p-8 rounded-xl shadow-neon-md w-full max-w-sm text-center">
-                <h2 class="font-display text-cyber-cyan mb-6 tracking-widest">AUTHENTICATION</h2>
-                <div class="relative mb-4">
-                    <input v-model="accessKey" type="text" placeholder="Enter Access Key" class="cyber-input w-full rounded p-3 text-center font-mono tracking-widest pr-10" @keyup.enter="login">
+
+        <!-- Auth Panel -->
+        <div v-if="!isAuthenticated" class="min-h-[80vh] flex items-center justify-center p-2">
+            <div class="auth-panel bg-cyber-surf border border-[#1e1e3a] p-6 sm:p-8 rounded-xl shadow-neon-md w-full max-w-sm text-center">
+                <h2 class="font-display text-cyber-cyan mb-5 sm:mb-6 tracking-widest text-base sm:text-lg">{{ t('authTitle') }}</h2>
+                <div class="relative mb-3 sm:mb-4">
+                    <input v-model="accessKey" type="text" :placeholder="t('authPlaceholder')"
+                        class="cyber-input w-full rounded-lg p-3 text-center font-mono tracking-widest text-sm min-h-[48px]"
+                        @keyup.enter="login">
                 </div>
-                <button @click="login" class="btn-neon-primary w-full py-2.5 rounded font-display tracking-widest font-bold">LOGIN</button>
+                <button @click="login"
+                    class="btn-neon-primary w-full py-3 rounded-lg font-display tracking-widest font-bold min-h-[48px]">
+                    {{ t('btnLogin') }}
+                </button>
                 <div v-if="authError" class="text-cyber-red text-xs mt-3 font-mono">{{ authError }}</div>
             </div>
         </div>
 
         <!-- Data Dump -->
         <div v-else class="neon-border rounded-xl bg-cyber-surf overflow-hidden shadow-neon">
-            <div class="px-4 py-3 border-b border-[#1e1e3a] flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <img src="/logo.png" alt="Logo" class="h-8 w-8 object-contain drop-shadow-[0_0_8px_rgba(0,240,255,0.6)] rounded-sm">
-                    <h1 class="font-display text-lg tracking-[.15em] text-cyber-cyan">RAW<span class="text-cyber-text">_DATA</span></h1>
-                    <span class="text-xs text-cyber-muted hidden sm:inline">// 实时数据流日志</span>
+            <!-- Header -->
+            <div class="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-[#1e1e3a] flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <img src="/logo.png" alt="Logo" class="h-7 w-7 sm:h-8 sm:w-8 object-contain drop-shadow-[0_0_8px_rgba(0,240,255,0.6)] rounded-sm flex-shrink-0">
+                    <h1 class="font-display text-sm sm:text-lg tracking-[.12em] text-cyber-cyan whitespace-nowrap">RAW<span class="text-cyber-text">_DATA</span></h1>
+                    <span class="text-[10px] text-cyber-muted hidden lg:inline">{{ t('dataHeaderSubtitle') }}</span>
                 </div>
-                <div class="flex items-center gap-3">
-                    <button @click="logout" class="text-xs font-mono text-cyber-red border border-cyber-red/30 px-2 py-1 rounded hover:bg-cyber-red/10">LOGOUT</button>
-                    <select onchange="if(this.value) window.location.href = this.value" class="bg-cyber-bg text-cyber-cyan border border-[#1e1e3a] hover:border-cyber-cyan rounded px-2 py-1 outline-none transition-colors cursor-pointer text-[10px] font-mono">
-                        <option value="" disabled selected>[ PAGE_JUMP ]</option>
-                        <option value="/index.html">LATENCY_MATRIX</option>
-                        <option value="/node.html">EDGE_NODE</option>
-                        <option value="/data.html">RAW_DATA</option>
-                        <option value="/admin.html">ADMIN_PANEL</option>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <button @click="toggleLang" class="lang-btn">{{ t('langToggle') }}</button>
+                    <button @click="logout"
+                        class="text-[11px] font-mono text-cyber-red border border-cyber-red/30 px-2.5 py-1.5 rounded hover:bg-cyber-red/10 min-h-[32px]">
+                        {{ t('btnLogout') }}
+                    </button>
+                    <!-- Page jump — desktop only -->
+                    <select onchange="if(this.value) window.location.href = this.value"
+                        class="hidden sm:block bg-cyber-bg text-cyber-cyan border border-[#1e1e3a] hover:border-cyber-cyan rounded px-2 py-1 outline-none transition-colors cursor-pointer text-[10px] font-mono">
+                        <option value="" disabled selected>{{ t('pageJump') }}</option>
+                        <option value="/index.html">{{ t('pageLatencyMatrix') }}</option>
+                        <option value="/node.html">{{ t('pageEdgeNode') }}</option>
+                        <option value="/data.html">{{ t('pageRawData') }}</option>
+                        <option value="/admin.html">{{ t('pageAdminPanel') }}</option>
                     </select>
-                    <span class="text-[10px] text-cyber-muted font-mono">// MATRIX_API</span>
+                    <span class="text-[10px] text-cyber-muted font-mono hidden sm:inline">{{ t('matrixApiLabel') }}</span>
                 </div>
             </div>
-            
-            <div class="p-4">
-                <div v-if="loading" class="text-cyber-dim font-mono text-xs animate-pulse">// Loading data stream...</div>
-                <pre v-else class="code-block p-4 text-cyber-green/90 overflow-x-auto max-h-[70vh]">{{ dumpData }}</pre>
+
+            <div class="p-3 sm:p-4">
+                <div v-if="loading" class="text-cyber-dim font-mono text-xs animate-pulse py-4">{{ t('loadingData') }}</div>
+                <pre v-else class="code-block p-3 sm:p-4 text-cyber-green/90 overflow-x-auto max-h-[65vh] sm:max-h-[70vh] text-[11px] sm:text-[13px]">{{ dumpData }}</pre>
             </div>
         </div>
     </div>
+
+    <!-- Mobile Bottom Nav -->
+    <nav class="mobile-nav">
+        <a href="/index.html">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            <span>MATRIX</span>
+        </a>
+        <a href="/node.html">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            <span>NODE</span>
+        </a>
+        <a href="/data.html" class="active">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+            <span>DATA</span>
+        </a>
+        <a href="/admin.html">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+                <path d="M12 2v2M12 20v2M2 12H4M20 12h2"/>
+            </svg>
+            <span>ADMIN</span>
+        </a>
+    </nav>
 
     <script>
         const { createApp, ref, onMounted } = Vue;
 
         createApp({
             setup() {
+                const { t: tComputed, locale, toggleLang } = I18n.useI18n(Vue);
+                const t = (key) => tComputed.value(key);
+
                 const params = new URLSearchParams(window.location.search);
                 const urlKey = params.get('key');
                 let initialKey = urlKey || localStorage.getItem('SL_KEY') || '';
@@ -159,10 +222,10 @@
                             localStorage.setItem('SL_KEY', accessKey.value);
                             fetchData();
                         } else {
-                            authError.value = "ACCESS_DENIED";
+                            authError.value = t('errAccessDenied');
                         }
                     } catch (e) {
-                        authError.value = "CONNECTION_ERROR";
+                        authError.value = t('errConnectionError');
                     }
                 };
 
@@ -179,10 +242,9 @@
                         const res = await fetch(`/api/ServerLatency/Matrix?key=${encodeURIComponent(accessKey.value)}`);
                         if (res.status === 401) { logout(); return; }
                         const data = await res.json();
-                        // Verify if data is actually authenticated (handles optional auth endpoints gracefully)
                         if (data.isAuth === false && accessKey.value !== '') {
                             logout();
-                            authError.value = "ACCESS_DENIED";
+                            authError.value = t('errAccessDenied');
                             return;
                         }
                         dumpData.value = JSON.stringify(data, null, 2);
@@ -193,19 +255,11 @@
                     }
                 };
 
-                onMounted(() => {
-                    if (accessKey.value) {
-                        login();
-                    }
-                });
+                onMounted(() => { if (accessKey.value) login(); });
 
-                return {
-                    isAuthenticated, accessKey, authError, loading, dumpData,
-                    login, logout
-                };
+                return { isAuthenticated, accessKey, authError, loading, dumpData, login, logout, t, locale, toggleLang };
             }
         }).mount('#app');
     </script>
 </body>
-
 </html>
