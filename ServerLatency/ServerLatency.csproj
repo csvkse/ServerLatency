@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Server\wwwroot\**\*" />
+    <EmbeddedResource Include="Server/wwwroot/**/*" />
   </ItemGroup>
 
   <ItemGroup>

@@ -62,7 +62,7 @@ public static class ServerApp
         
         // Serve embedded static files
         var assembly = typeof(ServerApp).Assembly;
-        var embeddedProvider = new Microsoft.Extensions.FileProviders.ManifestEmbeddedFileProvider(assembly, "Server\\wwwroot");
+        var embeddedProvider = new Microsoft.Extensions.FileProviders.ManifestEmbeddedFileProvider(assembly, "Server/wwwroot");
         app.UseStaticFiles(new StaticFileOptions
         {
             FileProvider = embeddedProvider,
