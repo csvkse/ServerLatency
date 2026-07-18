@@ -31,10 +31,12 @@ ARG BUILD_CONFIGURATION=Release
 ARG APP_VERSION
 # 使用单行脚本根据 APP_VERSION 决定构建命令
 RUN if [ -n "$APP_VERSION" ]; then \
-      dotnet publish "./ServerLatency.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true -p:Version=$APP_VERSION; \
+      dotnet publish "./ServerLatency.csproj" -c $BUILD_CONFIGURATION -r linux-x64 -o /app/publish /p:UseAppHost=true -p:Version=$APP_VERSION; \
     else \
-      dotnet publish "./ServerLatency.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true; \
+      dotnet publish "./ServerLatency.csproj" -c $BUILD_CONFIGURATION -r linux-x64 -o /app/publish /p:UseAppHost=true; \
     fi
+# 调试符号不进镜像
+RUN rm -f /app/publish/*.dbg
 
 # 从 VS 启动以支持常规模式(不使用调试配置时为默认值)下的调试时，此阶段用作最终阶段的基础
 FROM base AS aotdebug
@@ -46,7 +48,7 @@ RUN apt-get update \
 USER app
 
 # 此阶段在生产中使用，或在常规模式下从 VS 运行时使用(在不使用调试配置时为默认值)
-FROM ${FINAL_BASE_IMAGE:-mcr.microsoft.com/dotnet/runtime-deps:10.0} AS final
+FROM ${FINAL_BASE_IMAGE:-mcr.microsoft.com/dotnet/runtime-deps:10.0-noble-chiseled} AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["./ServerLatency"]
